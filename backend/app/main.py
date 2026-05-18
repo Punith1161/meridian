@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.database import engine, Base
-from app.routers import auth, tasks, timer
+from app.routers import auth, tasks, timer, notes, sheets, summary
 
 load_dotenv()
 
@@ -24,6 +24,9 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(timer.router, prefix="/api")
+app.include_router(notes.router, prefix="/api")
+app.include_router(sheets.router, prefix="/api")
+app.include_router(summary.router, prefix="/api")
 
 
 @app.get("/health")

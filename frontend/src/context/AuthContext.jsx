@@ -1,0 +1,67 @@
+import { createContext, useState, useEffect } from 'react';
+import { login as loginAPI } from '../api/auth';
+
+export const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem('meridian_token');
+    if (savedToken) {
+      setToken(savedToken);
+      validateToken(savedToken);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const validateToken = async (authToken) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/me', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
+        logout();
+      }
+    } catch (error) {
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    const response = await loginAPI(email, password);
+    const authToken = response.access_token;
+    setToken(authToken);
+    localStorage.setItem('meridian_token', authToken);
+    
+    const userResponse = await fetch('http://localhost:8000/api/auth/me', {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    const userData = await userResponse.json();
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('meridian_token');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
