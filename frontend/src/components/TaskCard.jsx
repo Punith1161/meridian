@@ -1,7 +1,9 @@
 import { useTimer } from '../hooks/useTimer';
 import { formatTime } from '../utils/formatTime';
+import { relativeDate } from '../utils/dateHelpers';
+import { TimerButton } from './TimerButton';
 
-export function TaskCard({ task, onTimerToggle }) {
+export function TaskCard({ task, onTimerToggle, showTimer = true }) {
   const displaySeconds = useTimer(task.timer_started_at !== null, task.time_spent);
   
   const getPriorityColor = () => {
@@ -21,40 +23,52 @@ export function TaskCard({ task, onTimerToggle }) {
     ? Math.min((task.time_spent / (task.time_estimate * 60)) * 100, 100)
     : 0;
 
+  const dueLabel = task.due_date ? relativeDate(task.due_date) : null;
+
   return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded p-4 mb-3">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="text-sm font-medium text-[var(--text-primary)] flex-1">{task.title}</h3>
-        <button
-          onClick={() => onTimerToggle(task.id)}
-          className="ml-2 w-7 h-7 flex items-center justify-center rounded-full border border-[var(--border-secondary)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-        >
-          {task.timer_started_at ? '⏸' : '▶'}
-        </button>
+    <div className="card p-3">
+      <div className="text-sm font-medium text-[var(--text-primary)] mb-2 leading-5">
+        {task.title}
       </div>
 
-      <div className="flex gap-2 mb-2">
-        <span className={`text-xs px-2 py-1 rounded ${getPriorityColor()}`}>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${getPriorityColor()}`}>
           {task.priority}
         </span>
-        {task.due_date && (
-          <span className="text-xs text-[var(--text-secondary)]">{task.due_date}</span>
+        {dueLabel && (
+          <span className="text-[11px] text-[var(--text-tertiary)] flex items-center gap-1">
+            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            {dueLabel}
+          </span>
         )}
       </div>
 
       {task.time_estimate && (
         <div className="mb-2">
-          <div className="h-1 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+          <div className="h-[3px] bg-[var(--bg-hover)] rounded">
             <div
-              className="h-full bg-[var(--accent)]"
+              className="h-full bg-[var(--accent)] rounded transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">
-            {formatTime(displaySeconds)} / {formatTime(task.time_estimate * 60)}
-          </div>
         </div>
       )}
+
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-[var(--text-tertiary)] font-['DM_Mono']">
+          {formatTime(displaySeconds)}
+        </span>
+        {showTimer ? (
+          <TimerButton isRunning={task.timer_started_at !== null} onClick={() => onTimerToggle(task.id)} />
+        ) : (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="var(--success)" strokeWidth="2.5" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </div>
     </div>
   );
 }

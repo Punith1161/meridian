@@ -1,52 +1,78 @@
+import { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
+import { AuthContext } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
+import Kanban from './pages/Kanban';
+import Today from './pages/Today';
+import AllTasks from './pages/AllTasks';
+import Notes from './pages/Notes';
+import Sheets from './pages/Sheets';
 
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (usermod -aG sudo punith) return <Navigate to="/login" />;
-  
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
-};
-
-function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
-        </main>
-      </div>
-    </Router>
-  );
 }
 
-export default App;
+export default function App() {
+  const { isAuthenticated, loading } = useContext(AuthContext);
+
+  return (
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={!isAuthenticated && !loading ? <Login /> : <Navigate to="/" replace />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Kanban />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/today"
+            element={
+              <ProtectedRoute>
+                <Today />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <AllTasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <Notes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sheets"
+            element={
+              <ProtectedRoute>
+                <Sheets />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </ThemeProvider>
+  );
+}

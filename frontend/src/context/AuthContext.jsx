@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import { login as loginAPI } from '../api/auth';
+import { login as loginAPI, getMe } from '../api/auth';
 
 export const AuthContext = createContext();
 
@@ -21,16 +21,9 @@ export function AuthProvider({ children }) {
 
   const validateToken = async (authToken) => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/me', {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        setIsAuthenticated(true);
-      } else {
-        logout();
-      }
+      const userData = await getMe();
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
       logout();
     } finally {
@@ -43,11 +36,8 @@ export function AuthProvider({ children }) {
     const authToken = response.access_token;
     setToken(authToken);
     localStorage.setItem('meridian_token', authToken);
-    
-    const userResponse = await fetch('http://localhost:8000/api/auth/me', {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const userData = await userResponse.json();
+
+    const userData = await getMe();
     setUser(userData);
     setIsAuthenticated(true);
   };

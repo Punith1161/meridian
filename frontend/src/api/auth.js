@@ -27,10 +27,12 @@ export const register = (email, password) =>
   api.post('/auth/register', { email, password });
 
 export const login = (email, password) => {
-  const formData = new FormData();
-  formData.append('username', email);
-  formData.append('password', password);
-  return axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, formData);
+  const params = new URLSearchParams();
+  params.append('username', email);
+  params.append('password', password);
+  return api.post('/auth/login', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
 };
 
 export const getMe = () => api.get('/auth/me');

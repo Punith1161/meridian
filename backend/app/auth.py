@@ -17,10 +17,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10080
 
 
 def hash_password(password: str) -> str:
+    # Truncate password to 72 bytes for bcrypt compatibility
+    password = password[:72]
     return pwd_context.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    # Truncate password to 72 bytes for bcrypt compatibility
+    plain = plain[:72]
     return pwd_context.verify(plain, hashed)
 
 

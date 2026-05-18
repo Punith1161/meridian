@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
+import { ThemeContext } from '../context/ThemeContext';
 
 export function NoteEditor({ note, onSave }) {
+  const { theme } = useContext(ThemeContext);
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [debounceTimer, setDebounceTimer] = useState(null);
+  const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
     if (note) {
@@ -14,6 +17,13 @@ export function NoteEditor({ note, onSave }) {
       setContent(note.content || '');
     }
   }, [note]);
+
+  useEffect(() => {
+    const handleResize = () => setIsNarrow(window.innerWidth < 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
@@ -41,24 +51,21 @@ export function NoteEditor({ note, onSave }) {
   }
 
   return (
-    <div className="h-full flex flex-col" data-color-mode="dark">
+    <div className="h-full flex flex-col meridian-md" data-color-mode={theme}>
       <input
         type="text"
         value={title}
         onChange={handleTitleChange}
-        className="bg-transparent text-2xl font-semibold text-[var(--text-primary)] mb-4 border-b border-[var(--border-primary)] pb-2 focus:outline-none"
+        className="bg-transparent text-lg font-semibold text-[var(--text-primary)] mb-4 border-b border-[var(--border-primary)] pb-2 focus:outline-none"
         placeholder="Note title"
       />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto">
         <MDEditor
           value={content}
           onChange={handleContentChange}
-          preview="live"
-          height={400}
+          preview={isNarrow ? 'edit' : 'live'}
           visibleDragbar={false}
-          textareaProps={{
-            disabled: false,
-          }}
+          className="h-full"
           hideToolbar={false}
         />
       </div>

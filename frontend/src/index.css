@@ -2,25 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #3b82f6;
-  --secondary: #64748b;
-  --accent: #8b5cf6;
-  --muted: #f1f5f9;
+[data-theme='dark'] {
+  --bg-primary: #0f0f11;
+  --bg-secondary: #17171a;
+  --bg-tertiary: #1e1e22;
+  --bg-hover: #26262c;
+  --border-primary: #2e2e36;
+  --border-secondary: #3a3a44;
+  --text-primary: #f0f0f2;
+  --text-secondary: #9090a0;
+  --text-tertiary: #5a5a6a;
+  --accent: #6c5ce7;
+  --accent-subtle: rgba(108, 92, 231, 0.12);
+  --success: #3ecf8e;
+  --success-subtle: rgba(62, 207, 142, 0.12);
+  --warning: #f5a623;
+  --warning-subtle: rgba(245, 166, 35, 0.12);
+  --danger: #e05c6a;
+  --danger-subtle: rgba(224, 92, 106, 0.12);
+  --info: #4ea8de;
+  --info-subtle: rgba(78, 168, 222, 0.12);
+  --overlay: rgba(0, 0, 0, 0.5);
 }
 
-[data-theme='dark'] {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --primary: #60a5fa;
-  --secondary: #94a3b8;
-  --accent: #a78bfa;
-  --muted: #1e293b;
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f7;
+  --bg-tertiary: #ebebef;
+  --bg-hover: #e2e2e8;
+  --border-primary: #d8d8e0;
+  --border-secondary: #c8c8d4;
+  --text-primary: #111114;
+  --text-secondary: #505060;
+  --text-tertiary: #8888a0;
+  --accent: #5b4fd4;
+  --accent-subtle: rgba(91, 79, 212, 0.1);
+  --success: #1a9e68;
+  --success-subtle: rgba(26, 158, 104, 0.1);
+  --warning: #c47e00;
+  --warning-subtle: rgba(196, 126, 0, 0.1);
+  --danger: #c0404e;
+  --danger-subtle: rgba(192, 64, 78, 0.1);
+  --info: #2b7bb8;
+  --info-subtle: rgba(43, 123, 184, 0.1);
+  --overlay: rgba(0, 0, 0, 0.3);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  @apply bg-[var(--bg-primary)] text-[var(--text-primary)] font-['DM_Sans'] overflow-hidden;
+}
+
+input,
+textarea,
+select {
+  @apply font-['DM_Sans'];
+}
+
+code,
+pre {
+  @apply font-['DM_Mono'];
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-[var(--border-secondary)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors;
+  }
+
+  .btn-primary {
+    @apply btn bg-[var(--accent)] text-white border-[var(--accent)] hover:opacity-90;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors;
+  }
+
+  .input-base {
+    @apply w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-md px-3 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)];
+  }
+
+  .card {
+    @apply bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md transition-colors;
+  }
+}
+
+.ag-theme-meridian {
+  --ag-background-color: var(--bg-primary);
+  --ag-foreground-color: var(--text-primary);
+  --ag-border-color: var(--border-primary);
+  --ag-header-background-color: var(--bg-secondary);
+  --ag-header-foreground-color: var(--text-tertiary);
+  --ag-row-hover-color: var(--bg-hover);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-primary);
+  --ag-input-border-color: var(--border-secondary);
+  --ag-selected-row-background-color: var(--accent-subtle);
+  height: 100%;
+}
+
+.meridian-md .w-md-editor {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: none;
+  height: 100%;
+}
+
+.meridian-md .w-md-editor-toolbar {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.meridian-md .w-md-editor-text-input,
+.meridian-md .w-md-editor-preview {
+  background-color: var(--bg-primary);
+}
+
+.meridian-md .w-md-editor-preview {
+  color: var(--text-secondary);
 }

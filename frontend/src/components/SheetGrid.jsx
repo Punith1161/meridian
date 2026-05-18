@@ -1,19 +1,15 @@
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
-import { useContext } from 'react';
-import { ThemeContext } from '../context/ThemeContext';
 
 export function SheetGrid({ sheet, onDataChange }) {
-  const { theme } = useContext(ThemeContext);
-  
   if (!sheet) {
     return <div>Loading...</div>;
   }
 
   const columnDefs = sheet.data.cols.map((col, idx) => ({
     field: `col_${idx}`,
-    headerName: col.key,
+    headerName: col,
     editable: true,
     flex: 1,
   }));
@@ -21,7 +17,7 @@ export function SheetGrid({ sheet, onDataChange }) {
   const rowData = sheet.data.rows.map((row, idx) => {
     const obj = { id: idx };
     row.forEach((cell, cellIdx) => {
-      obj[`col_${cellIdx}`] = cell.value || '';
+      obj[`col_${cellIdx}`] = cell ?? '';
     });
     return obj;
   });
@@ -32,10 +28,7 @@ export function SheetGrid({ sheet, onDataChange }) {
     if (!newData[event.rowIndex]) {
       newData[event.rowIndex] = [];
     }
-    if (!newData[event.rowIndex][colIndex]) {
-      newData[event.rowIndex][colIndex] = {};
-    }
-    newData[event.rowIndex][colIndex].value = event.newValue;
+    newData[event.rowIndex][colIndex] = event.newValue;
     
     onDataChange({
       ...sheet.data,
@@ -44,12 +37,12 @@ export function SheetGrid({ sheet, onDataChange }) {
   };
 
   return (
-    <div className={`ag-theme-quartz-${theme === 'light' ? 'light' : 'dark'} h-full`}>
+    <div className="ag-theme-meridian h-full">
       <AgGridReact
         columnDefs={columnDefs}
         rowData={rowData}
         onCellValueChanged={handleCellValueChanged}
-        defaultColDef={{ filter: true, sortable: true }}
+        defaultColDef={{ filter: false, sortable: false, resizable: true }}
       />
     </div>
   );
