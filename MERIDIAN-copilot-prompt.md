@@ -47,46 +47,39 @@ meridian/
     requirements.txt
     README.md
   frontend/
-    src/
+    lib/
       api/
-        auth.js
-        tasks.js
-        notes.js
-        sheets.js
-        summary.js
-      components/
-        Sidebar.jsx
-        TaskCard.jsx
-        TimerButton.jsx
-        NoteEditor.jsx
-        SheetGrid.jsx
-        Modal.jsx
-        ThemeToggle.jsx
+        api_client.dart
+        api_config.dart
+      models/
+        task.dart
+        note.dart
+        sheet.dart
       pages/
-        Kanban.jsx
-        Today.jsx
-        AllTasks.jsx
-        Notes.jsx
-        Sheets.jsx
-        Login.jsx
-      context/
-        AuthContext.jsx
-        ThemeContext.jsx
-      hooks/
-        useTimer.js
-        useLocalStorage.js
+        kanban_page.dart
+        today_page.dart
+        all_tasks_page.dart
+        notes_page.dart
+        sheets_page.dart
+        login_page.dart
+      state/
+        auth_controller.dart
+        theme_controller.dart
+        app_state.dart
+      theme/
+        app_theme.dart
       utils/
-        formatTime.js
-        dateHelpers.js
-      App.jsx
-      main.jsx
-      index.css
-    index.html
-    vite.config.js
-    tailwind.config.js
-    postcss.config.js
-    .env
-    package.json
+        format_time.dart
+        date_helpers.dart
+      widgets/
+        sidebar.dart
+        app_shell.dart
+        task_card.dart
+        note_editor.dart
+        sheet_grid.dart
+        modal.dart
+      main.dart
+    pubspec.yaml
     README.md
   .gitignore
   README.md
@@ -234,7 +227,7 @@ Implement the following functions:
 
 - Load environment with dotenv
 - Create FastAPI app with title "MERIDIAN API"
-- Add CORSMiddleware allowing the frontend origin (from env or default localhost:5173)
+- Add CORSMiddleware allowing the frontend origin (from env or default localhost:8080)
 - Include all routers with prefix `/api`
 - Call `Base.metadata.create_all(bind=engine)` on startup
 - Add a health check at `GET /health` returning `{ "status": "ok" }`
@@ -270,115 +263,45 @@ API available at `http://localhost:8000`. Swagger docs at `http://localhost:8000
 
 ### Stack
 
-- React 18
-- Vite
-- Tailwind CSS
-- Axios for HTTP requests
-- @hello-pangea/dnd for drag and drop
-- @uiw/react-md-editor for the notes markdown editor
-- ag-grid-react and ag-grid-community for the spreadsheet
-- react-router-dom v6
-
-Do not use Redux, Zustand, or any other state management library. Use React context only for auth state and theme. All other state is local to components.
+- Flutter 3.19+
+- Dart 3.3+
+- go_router for routing
+- provider for auth/theme/app state
+- http for API requests
+- shared_preferences for JWT + theme persistence
+- flutter_markdown for note preview
 
 ### Environment variables
 
-The `frontend/.env` file must contain:
-
-```
-VITE_API_URL=http://localhost:8000/api
-```
+Use `MERIDIAN_API_URL` via `--dart-define` to override the default API base URL.
+Default is `http://localhost:8000/api` from `lib/api/api_config.dart`.
 
 ### Theming
 
-The application must support both light and dark themes. Theme is toggled by the user and persisted in localStorage. Implement using a `ThemeContext` that applies a `data-theme` attribute to the `<html>` element.
+The application must support both light and dark themes. Theme is toggled by the user and persisted in `shared_preferences` via `ThemeController`.
 
-Define all colors as CSS custom properties in `index.css` scoped to `[data-theme="light"]` and `[data-theme="dark"]`. Do not hardcode colors in component styles. Use only Tailwind utility classes that reference these CSS variables, or apply the CSS variables directly in `index.css` component layer classes.
+Define all colors in `lib/theme/app_theme.dart` and apply them via `AppColors` on widgets. Do not hardcode colors in widgets. The design must be clean, structured, and restrained: no gradients on primary UI elements, no excessive shadows, and rounded corners no larger than 8px except modals. Typography must be clear and hierarchical. Spacing must be consistent using a base 4px grid.
 
-The design must be clean, structured, and restrained. No gradients on primary UI elements. No drop shadows on every card. No rounded corners larger than 8px except modals. Typography must be clear and hierarchical. Spacing must be consistent using a base 4px grid.
+Use the font `DM Sans` for UI text and `DM Mono` for timer values, cell inputs, and code content. If font assets are unavailable, fall back to system fonts.
 
-Use the font `DM Sans` for UI text and `DM Mono` for timer values, cell inputs, and code content. Load both from Google Fonts in `index.html`.
+**Theme color tokens**
 
-**Dark theme variables:**
+Define the following colors inside `AppColors` for light and dark themes using the same hex values:
 
-```css
-[data-theme="dark"] {
-  --bg-primary: #0f0f11;
-  --bg-secondary: #17171a;
-  --bg-tertiary: #1e1e22;
-  --bg-hover: #26262c;
-  --border-primary: #2e2e36;
-  --border-secondary: #3a3a44;
-  --text-primary: #f0f0f2;
-  --text-secondary: #9090a0;
-  --text-tertiary: #5a5a6a;
-  --accent: #6c5ce7;
-  --accent-subtle: rgba(108, 92, 231, 0.12);
-  --success: #3ecf8e;
-  --success-subtle: rgba(62, 207, 142, 0.12);
-  --warning: #f5a623;
-  --warning-subtle: rgba(245, 166, 35, 0.12);
-  --danger: #e05c6a;
-  --danger-subtle: rgba(224, 92, 106, 0.12);
-  --info: #4ea8de;
-  --info-subtle: rgba(78, 168, 222, 0.12);
-}
-```
+- Dark: bgPrimary #0f0f11, bgSecondary #17171a, bgTertiary #1e1e22, bgHover #26262c, borderPrimary #2e2e36, borderSecondary #3a3a44, textPrimary #f0f0f2, textSecondary #9090a0, textTertiary #5a5a6a, accent #6c5ce7, accentSubtle rgba(108,92,231,0.12), success #3ecf8e, successSubtle rgba(62,207,142,0.12), warning #f5a623, warningSubtle rgba(245,166,35,0.12), danger #e05c6a, dangerSubtle rgba(224,92,106,0.12), info #4ea8de, infoSubtle rgba(78,168,222,0.12).
+- Light: bgPrimary #ffffff, bgSecondary #f5f5f7, bgTertiary #ebebef, bgHover #e2e2e8, borderPrimary #d8d8e0, borderSecondary #c8c8d4, textPrimary #111114, textSecondary #505060, textTertiary #8888a0, accent #5b4fd4, accentSubtle rgba(91,79,212,0.1), success #1a9e68, successSubtle rgba(26,158,104,0.1), warning #c47e00, warningSubtle rgba(196,126,0,0.1), danger #c0404e, dangerSubtle rgba(192,64,78,0.1), info #2b7bb8, infoSubtle rgba(43,123,184,0.1).
 
-**Light theme variables:**
+### API layer — `lib/api/`
 
-```css
-[data-theme="light"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f7;
-  --bg-tertiary: #ebebef;
-  --bg-hover: #e2e2e8;
-  --border-primary: #d8d8e0;
-  --border-secondary: #c8c8d4;
-  --text-primary: #111114;
-  --text-secondary: #505060;
-  --text-tertiary: #8888a0;
-  --accent: #5b4fd4;
-  --accent-subtle: rgba(91, 79, 212, 0.1);
-  --success: #1a9e68;
-  --success-subtle: rgba(26, 158, 104, 0.1);
-  --warning: #c47e00;
-  --warning-subtle: rgba(196, 126, 0, 0.1);
-  --danger: #c0404e;
-  --danger-subtle: rgba(192, 64, 78, 0.1);
-  --info: #2b7bb8;
-  --info-subtle: rgba(43, 123, 184, 0.1);
-}
-```
+Use `ApiClient` to send JSON requests with `Authorization: Bearer <token>` when available. Handle 401s by clearing the token through `AuthController.logout()`.
 
-### API layer — `src/api/`
+### Authentication — `state/auth_controller.dart`
 
-Each file in `src/api/` must:
+Provide `token`, `login(email, password)`, `logout()`, and `isAuthenticated` to the entire app. Store the JWT token in `shared_preferences` under the key `meridian_token`. On app load, validate the stored token by calling `GET /auth/me`. If it fails, clear the token and redirect to login.
 
-- Import axios and create an instance with `baseURL` from `import.meta.env.VITE_API_URL`
-- Attach the JWT token from localStorage to every request using an axios request interceptor
-- Handle 401 responses in a response interceptor by clearing the token and redirecting to `/login`
-- Export named async functions, one per endpoint
+### Routing — `main.dart`
 
-Example pattern for `src/api/tasks.js`:
-
-```js
-export const getTasks = () => api.get('/tasks')
-export const createTask = (data) => api.post('/tasks', data)
-export const updateTask = (id, data) => api.put(`/tasks/${id}`, data)
-export const updateTaskStatus = (id, status) => api.patch(`/tasks/${id}/status`, { status })
-export const deleteTask = (id) => api.delete(`/tasks/${id}`)
-export const startTimer = (id) => api.post(`/tasks/${id}/timer/start`)
-export const stopTimer = (id) => api.post(`/tasks/${id}/timer/stop`)
-```
-
-### Authentication — `src/context/AuthContext.jsx`
-
-Provide `user`, `token`, `login(email, password)`, `logout()`, and `isAuthenticated` to the entire app. Store the JWT token in localStorage under the key `meridian_token`. On app load, validate the stored token by calling `GET /auth/me`. If it fails, clear the token and redirect to login.
-
-### Routing — `src/App.jsx`
-
-Use `react-router-dom` v6. Protected routes redirect to `/login` if not authenticated. Public routes redirect to `/` if already authenticated.
+Use `go_router`. Protected routes redirect to `/login` if not authenticated. Public routes redirect to `/` if already authenticated.
 
 Routes:
 - `/login` — Login page (public)
@@ -405,88 +328,94 @@ The sidebar contains navigation icons in this order from top to bottom:
 
 ### Component specifications
 
-**`Sidebar.jsx`**
+**`sidebar.dart`**
 
-Renders the fixed left nav. Active item is determined by the current route. No text labels — icons only with title attributes for accessibility. Theme toggle at the bottom switches between light and dark and persists to localStorage.
+Renders the fixed left nav. Active item is determined by the current route. No text labels — icons only with tooltips for accessibility. Theme toggle at the bottom switches between light and dark and persists to `shared_preferences`.
 
-**`TaskCard.jsx`**
+**`task_card.dart`**
 
 Props: `task`, `onTimerToggle`. Renders the task title, priority badge, due date, a thin progress bar (time_spent vs time_estimate in seconds), and a timer button. The timer button shows a play or pause icon depending on whether the timer is running. While the timer is running, the card shows the elapsed time updating every second using a local interval — the actual save happens when the timer is stopped via the API.
 
 Priority badge colors: high uses danger variables, medium uses warning variables, low uses success variables.
 
-**`TimerButton.jsx`**
+**`TimerButton` (inside `task_card.dart`)**
 
 A circular button, 28px diameter. Idle state: border using `--border-secondary`, icon using `--text-tertiary`. Running state: border and icon using `--success`. Hover on idle: accent color. No animation, no pulse.
 
-**`NoteEditor.jsx`**
+**`note_editor.dart`**
 
-Uses `@uiw/react-md-editor`. The editor renders in split mode by default (edit on left, preview on right) on wide screens and in edit-only mode on narrow screens. The note title is an editable plain text input above the editor, styled as a heading. Auto-save on every change after a 600ms debounce — do not save on every keystroke.
+Uses `TextField` for editing and `flutter_markdown` for preview. The editor renders in split mode by default (edit on left, preview on right) on wide screens and in edit-only mode on narrow screens. The note title is an editable plain text input above the editor, styled as a heading. Auto-save on every change after a 600ms debounce — do not save on every keystroke.
 
-**`SheetGrid.jsx`**
+**`sheet_grid.dart`**
 
-Uses `ag-grid-react` with `ag-grid-community`. Renders the sheet data as an editable grid. Column headers are editable. Rows can be added. The grid theme must match the application theme — override AG Grid CSS variables to use the application's CSS custom properties. Do not use the default AG Grid theme colors directly.
+Renders the sheet data as an editable grid. Column headers are editable. Rows can be added. The grid theme must match the application theme by using `AppColors` values.
 
-**`Modal.jsx`**
+**`modal.dart`**
 
-A centered overlay modal. Closes on clicking the overlay or pressing Escape. Props: `isOpen`, `onClose`, `title`, `children`. The overlay uses `rgba(0,0,0,0.5)` in dark mode and `rgba(0,0,0,0.3)` in light mode.
+A centered modal using `showDialog` with a dimmed barrier. Closes on clicking the overlay or pressing Escape. The overlay uses `rgba(0,0,0,0.5)` in dark mode and `rgba(0,0,0,0.3)` in light mode.
 
 ### Page specifications
 
-**`Kanban.jsx`**
+**`kanban_page.dart`**
 
-Uses `@hello-pangea/dnd`. Three `Droppable` columns. Each task is a `Draggable` wrapping `TaskCard`. On drag end, if the destination column differs from the source, call `updateTaskStatus` with the new status. Render the column count next to each column header. A create task button opens the Modal with a form for title, priority, due date, and time estimate. Map column ids: `todo`, `inprogress`, `done`.
+Uses `Draggable` and `DragTarget`. Three columns. Each task is a `LongPressDraggable` wrapping `TaskCard`. On drop into a different column, call `updateTaskStatus` with the new status. Render the column count next to each column header. A create task button opens the modal with a form for title, priority, due date, and time estimate. Map column ids: `todo`, `inprogress`, `done`.
 
-**`Today.jsx`**
+**`today_page.dart`**
 
-Fetches from `GET /summary/today`. Shows three stat cards at the top: tasks today, completed, and total time tracked (formatted as Xh Ym). Below the stats, shows a list of today's tasks. Each item has a checkbox that calls `updateTaskStatus` to toggle between `todo` and `done`. No drag and drop on this page.
+Shows three stat cards at the top: tasks today, completed, and total time tracked (formatted as Xh Ym). Below the stats, shows a list of today's tasks. Each item has a checkbox that calls `updateTaskStatus` to toggle between `todo` and `done`. No drag and drop on this page.
 
-**`AllTasks.jsx`**
+**`all_tasks_page.dart`**
 
 Renders all tasks in a plain HTML table. Columns: Title, Priority, Status, Due Date, Estimate, Time Spent. Rows are clickable to open a task detail modal for editing. Add a filter row above the table with dropdowns for priority and status.
 
-**`Notes.jsx`**
+**`notes_page.dart`**
 
 Left panel: list of notes ordered by updated_at descending. Each item shows the title and a relative timestamp. A create button at the top of the panel adds a new note with title "Untitled" and opens it immediately. Right panel: `NoteEditor` for the selected note. Deleting a note requires a confirmation step — a second click on the delete button or a confirmation prompt.
 
-**`Sheets.jsx`**
+**`sheets_page.dart`**
 
 Left panel: list of sheets. A create button adds a new sheet with five default columns (A through E) and six empty rows. Right panel: sheet name input at the top, `SheetGrid` below. Add row and add column buttons in the toolbar. Sheet data is saved to the backend on every cell edit after a 1000ms debounce.
 
-**`Login.jsx`**
+**`login_page.dart`**
 
 A centered card with email and password fields and a submit button. No registration UI — the registration endpoint exists for programmatic use only. Show a clear error message if credentials are wrong. No "forgot password" link.
 
 ### Utility functions
 
-**`src/utils/formatTime.js`**
+**`lib/utils/format_time.dart`**
 
-```js
+```dart
 // Converts seconds to display string
 // Under 1 hour: MM:SS
 // 1 hour or more: Xh Ym
-export function formatTime(seconds) { ... }
+String formatTime(int seconds) { ... }
 
 // Converts seconds to hours and minutes string for summary display
-export function formatHoursMinutes(seconds) { ... }
+String formatHoursMinutes(int seconds) { ... }
 ```
 
-**`src/utils/dateHelpers.js`**
+**`lib/utils/date_helpers.dart`**
 
-```js
-// Returns true if the given date string is today
-export function isToday(dateString) { ... }
+```dart
+// Returns true if the given date is today
+bool isToday(DateTime? date) { ... }
 
 // Returns a relative label: 'Today', 'Tomorrow', 'Yesterday', or the formatted date
-export function relativeDate(dateString) { ... }
+String relativeDate(DateTime? date) { ... }
 ```
 
 ### Running the frontend
 
 ```
 cd frontend
-npm install
-npm run dev
+flutter pub get
+flutter run -d chrome
+```
+
+To override the API base URL:
+
+```
+flutter run -d chrome --dart-define=MERIDIAN_API_URL=http://localhost:8000/api
 ```
 
 Application available at `http://localhost:5173`.
@@ -563,7 +492,7 @@ These rules apply to every file in the project without exception.
 - No TODO comments. If it is not implemented, it does not exist in the file yet.
 - No unused imports, variables, or functions.
 - All strings that appear in the UI are written in sentence case. No all-caps UI labels except abbreviations.
-- No inline styles in React components except for dynamic values that cannot be expressed as class names (for example, a progress bar width calculated from data).
+- Avoid hardcoded colors in widgets. Use `AppColors` and theme tokens, except for dynamic values that cannot be derived from the theme.
 
 ### Python (backend)
 
@@ -574,23 +503,20 @@ These rules apply to every file in the project without exception.
 - Return appropriate HTTP status codes: 201 for creation, 204 for deletion, 404 for not found, 403 for unauthorized resource access.
 - Every database query must filter by `user_id` to prevent cross-user data access.
 
-### JavaScript (frontend)
+### Dart (frontend)
 
-- Use functional components with hooks only. No class components.
-- Use named exports for all components and utilities. No default exports except for page components used in the router.
-- Keep components under 150 lines. Extract sub-components or hooks if a component grows beyond this.
+- Keep widgets under 150 lines. Extract sub-widgets or helpers if a widget grows beyond this.
 - All API calls must be inside try/catch blocks. Show a user-facing error state when requests fail.
 - Use `async/await` consistently. Do not mix `.then()` and `async/await` in the same file.
-- Do not put API call logic directly inside components. Import from `src/api/`.
+- Do not put API call logic directly inside widgets. Use `ApiClient` and `AppState`.
 
 ### Naming
 
 - Backend Python files: snake_case for everything.
-- Frontend files: PascalCase for components, camelCase for hooks and utilities, camelCase for API files.
-- CSS class names: use Tailwind utility classes. Custom CSS classes in `index.css` use kebab-case.
+- Frontend Dart files: snake_case.
 - Database columns: snake_case.
 - API JSON fields: snake_case.
-- Frontend JavaScript variables and props: camelCase.
+- Frontend Dart variables and properties: lowerCamelCase.
 
 ---
 
@@ -604,7 +530,7 @@ Examples:
 - `feat: add timer start and stop endpoints`
 - `fix: prevent cross-user task access in tasks router`
 - `refactor: extract timer logic into useTimer hook`
-- `style: apply light theme CSS variables`
+- `style: apply light theme tokens`
 
 Branch naming: `feature/short-description`, `fix/short-description`
 
@@ -620,13 +546,11 @@ Branch naming: `feature/short-description`, `fix/short-description`
 4. Add environment variables: `DATABASE_URL`, `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`.
 5. Add a PostgreSQL plugin in Railway and copy the connection string to `DATABASE_URL`.
 
-### Frontend — Vercel
+### Frontend — Flutter web (Vercel/Netlify)
 
-1. Push the `frontend/` folder to GitHub.
-2. Create a new Vercel project and connect the repository.
-3. Set the framework preset to Vite.
-4. Set the environment variable `VITE_API_URL` to the deployed Railway backend URL.
-5. Vercel auto-deploys on every push to main.
+1. Run `flutter build web --dart-define=MERIDIAN_API_URL=https://your-api/api`.
+2. Deploy the `build/web` directory as a static site.
+3. Rebuild and redeploy when the API base URL changes.
 
 ### Database — Neon (alternative to Railway Postgres)
 
@@ -662,11 +586,11 @@ Write `routers/summary.py`. Test with tasks that have today's date.
 
 **Phase 6 — Frontend scaffold**
 
-Create the Vite project. Install all dependencies. Set up Tailwind with the CSS variables. Create `ThemeContext`, apply `data-theme` to `<html>`. Confirm both themes render correctly. Set up routing with placeholder pages.
+Create the Flutter project. Install dependencies. Configure `AppColors` and `ThemeController`. Confirm both themes render correctly. Set up routing with placeholder pages.
 
 **Phase 7 — Auth UI and API layer**
 
-Write all files in `src/api/`. Write `AuthContext`. Write the Login page. Confirm login works, token is stored, and the me endpoint is called on refresh.
+Write `ApiClient` and `AuthController`. Write the Login page. Confirm login works, token is stored, and the me endpoint is called on refresh.
 
 **Phase 8 — Kanban**
 
@@ -682,7 +606,7 @@ Write `NoteEditor` and `Notes` page. Connect to backend. Confirm debounced auto-
 
 **Phase 11 — Sheets**
 
-Write `SheetGrid` and `Sheets` page. Connect to backend. Confirm AG Grid theme matches application theme. Confirm debounced save works.
+Write `SheetGrid` and `Sheets` page. Connect to backend. Confirm debounced save works.
 
 **Phase 12 — Polish**
 
@@ -694,6 +618,6 @@ Review all pages in both light and dark themes. Fix any spacing inconsistencies.
 
 When working on a specific file, paste the relevant section of this document as a comment block at the top of the file before asking Copilot to generate code. For example, when working on `routers/tasks.py`, paste the tasks router specification and the code conventions section. Copilot will use the context to generate code that matches the expected structure and naming conventions.
 
-For complex files like `SheetGrid.jsx` or `NoteEditor.jsx`, also paste the component specification and the theming section so Copilot understands the CSS variable names and the design constraints.
+For complex files like `sheet_grid.dart` or `note_editor.dart`, also paste the component specification and the theming section so Copilot understands the design constraints and color tokens.
 
 When Copilot generates something that does not match this document, correct it immediately. Do not accumulate deviations. The value of this document is that the entire codebase follows one consistent set of decisions.

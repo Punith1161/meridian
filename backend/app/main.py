@@ -9,11 +9,15 @@ load_dotenv()
 
 app = FastAPI(title="MERIDIAN API")
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+frontend_urls = os.getenv("FRONTEND_URLS")
+if frontend_urls:
+    origins = [u.strip() for u in frontend_urls.split(",") if u.strip()]
+else:
+    origins = [os.getenv("FRONTEND_URL", "http://localhost:8080")]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

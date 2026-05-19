@@ -6,7 +6,7 @@ A comprehensive productivity management system with task tracking, time manageme
 
 MERIDIAN is a modern full-stack web application built with:
 - **Backend:** FastAPI + PostgreSQL + SQLAlchemy
-- **Frontend:** React 18 + Vite + Tailwind CSS
+- **Frontend:** Flutter + Dart
 - **Authentication:** JWT tokens with secure password hashing
 
 ### Features
@@ -43,44 +43,16 @@ MERIDIAN/
 │   └── venv/                    # Python virtual environment
 │
 ├── frontend/
-│   ├── src/
-│   │   ├── api/                 # API layer (axios)
-│   │   │   ├── auth.js
-│   │   │   ├── tasks.js
-│   │   │   ├── timer.js
-│   │   │   ├── notes.js
-│   │   │   ├── sheets.js
-│   │   │   └── summary.js
-│   │   ├── components/          # Reusable components
-│   │   │   ├── Sidebar.jsx
-│   │   │   ├── Modal.jsx
-│   │   │   ├── TaskCard.jsx
-│   │   │   ├── TimerButton.jsx
-│   │   │   ├── NoteEditor.jsx
-│   │   │   └── SheetGrid.jsx
-│   │   ├── context/             # Global state
-│   │   │   ├── AuthContext.jsx
-│   │   │   └── ThemeContext.jsx
-│   │   ├── hooks/               # Custom hooks
-│   │   │   ├── useLocalStorage.js
-│   │   │   └── useTimer.js
-│   │   ├── pages/               # Page components
-│   │   │   ├── Login.jsx
-│   │   │   ├── Kanban.jsx
-│   │   │   ├── Today.jsx
-│   │   │   ├── AllTasks.jsx
-│   │   │   ├── Notes.jsx
-│   │   │   └── Sheets.jsx
-│   │   ├── utils/               # Utilities
-│   │   │   ├── formatTime.js
-│   │   │   └── dateHelpers.js
-│   │   ├── App.jsx              # Router & layout
-│   │   ├── main.jsx             # React entry point
-│   │   └── index.css            # Global styles
-│   ├── index.html               # HTML template
-│   ├── package.json             # Node dependencies
-│   ├── .env                     # Frontend config
-│   └── node_modules/            # Dependencies
+│   ├── lib/
+│   │   ├── api/                 # API client + config
+│   │   ├── models/              # Task, Note, Sheet
+│   │   ├── pages/               # Login, Kanban, Today, Notes, Sheets
+│   │   ├── state/               # AuthController, ThemeController, AppState
+│   │   ├── theme/               # AppColors + ThemeData
+│   │   ├── utils/               # format_time, date_helpers
+│   │   └── widgets/             # Sidebar, AppShell, TaskCard, NoteEditor
+│   ├── pubspec.yaml             # Flutter dependencies
+│   └── README.md                # Flutter app docs
 │
 └── README.md                    # This file
 ```
@@ -88,9 +60,8 @@ MERIDIAN/
 ## Prerequisites
 
 - **Python 3.11+** with pip and venv
-- **Node.js 20.19+** (recommend 22+)
+- **Flutter 3.19+** / **Dart 3.3+**
 - **PostgreSQL 12+** with a running server
-- **npm** or **yarn** for package management
 
 ## Database Setup
 
@@ -139,16 +110,13 @@ python3 -c "import fastapi, sqlalchemy, jwt; print('All dependencies installed!'
 # Database tables are auto-created on first app start
 ```
 
-### Frontend Setup
+### Frontend Setup (Flutter)
 
 ```bash
 cd frontend
 
 # Install dependencies
-npm install
-
-# Verify installation
-npm list react vite tailwindcss
+flutter pub get
 ```
 
 ## Running the Application
@@ -167,21 +135,24 @@ uvicorn app.main:app --reload
 
 The API will be available at `http://localhost:8000/api` with interactive docs at `http://localhost:8000/docs`
 
-### Terminal 2 - Start Frontend Dev Server
+### Terminal 2 - Start Flutter App
 
 ```bash
 cd frontend
 
-# Start Vite dev server (runs on http://localhost:5173)
-npm run dev
+# Run the Flutter app (Chrome for web, or any connected device)
+flutter run -d chrome
+
+# If your API is not on the default URL:
+flutter run -d chrome --dart-define=MERIDIAN_API_URL=http://localhost:8000/api
 ```
 
-The app will automatically open at `http://localhost:5173`
+Flutter web will open at `http://localhost:8080` by default.
 
 ## First Run Walkthrough
 
-1. **Open** http://localhost:5173 in your browser
-2. **Register** a new account with email and password
+1. **Open** http://localhost:8080 in your browser (Flutter web)
+2. **Register** a new account via `POST /auth/register` (Swagger or curl)
 3. **Login** with your credentials
 4. **Create a Task** on the Kanban board
 5. **Start Timer** by clicking the play button on any task
@@ -235,10 +206,9 @@ The app will automatically open at `http://localhost:5173`
 - Database models auto-create on startup via `Base.metadata.create_all()`
 
 ### Frontend Development
-- Hot module reloading enabled with Vite
-- Tailwind CSS with utility classes
-- CSS custom properties for theming
-- Responsive design with mobile support
+- Hot reload enabled with Flutter
+- Theme tokens live in `lib/theme/app_theme.dart`
+- API base URL uses `MERIDIAN_API_URL` via `--dart-define`
 
 ## Testing
 
@@ -284,22 +254,15 @@ ValueError: password cannot be longer than 72 bytes
 
 ### Frontend Issues
 
-**Node Version Error**
+**Flutter SDK Not Found**
 ```
-Vite requires Node.js version 20.19+ or 22.12+
+flutter: command not found
 ```
-- Check version: `node --version`
-- Use NVM to upgrade: `nvm install 22 && nvm use 22`
-
-**Dependencies Not Installed**
-```
-Cannot find module '@hello-pangea/dnd'
-```
-- Run: `npm install`
+- Install Flutter and ensure `flutter` is on your PATH.
 
 **Port Already in Use**
 - Backend: `lsof -ti :8000 | xargs kill -9` then restart
-- Frontend: `lsof -ti :5173 | xargs kill -9` then restart
+- Flutter web: `lsof -ti :8080 | xargs kill -9` then restart
 
 ## Environment Variables
 
@@ -311,25 +274,23 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 ```
 
-### Frontend (.env)
-```
-VITE_API_URL=http://localhost:8000/api
-```
+### Frontend (Flutter)
+Use `--dart-define=MERIDIAN_API_URL=http://localhost:8000/api` when running or building.
 
 ## Deployment Notes
 
 ### Before Production
 1. Change `SECRET_KEY` to a strong random value
 2. Set `DATABASE_URL` to production database
-3. Update `VITE_API_URL` to production API URL
+3. Build with `--dart-define=MERIDIAN_API_URL=...` for production API URL
 4. Disable CORS for specific domains instead of all origins
 5. Set `ACCESS_TOKEN_EXPIRE_MINUTES` to appropriate value
 
 ### Build Frontend for Production
 ```bash
 cd frontend
-npm run build
-# Output in dist/ folder
+flutter build web --dart-define=MERIDIAN_API_URL=https://your-api/api
+# Output in build/web
 ```
 
 ## License
@@ -343,5 +304,5 @@ For issues or questions, refer to the project documentation or contact the devel
 ---
 
 **Created:** 2024
-**Stack:** FastAPI + React + PostgreSQL
+**Stack:** FastAPI + Flutter + PostgreSQL
 **Status:** Production Ready ✓
