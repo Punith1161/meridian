@@ -15,6 +15,7 @@ class User(Base):
     tasks = relationship("Task", back_populates="owner")
     notes = relationship("Note", back_populates="owner")
     sheets = relationship("Sheet", back_populates="owner")
+    activities = relationship("TaskActivity", back_populates="owner")
 
 
 class Task(Base):
@@ -25,6 +26,7 @@ class Task(Base):
     title = Column(String, nullable=False)
     priority = Column(String, default="medium")
     status = Column(String, default="todo")
+    position = Column(Integer, default=0)
     due_date = Column(Date, nullable=True)
     time_estimate = Column(Integer, nullable=True)
     time_spent = Column(Integer, default=0)
@@ -33,6 +35,9 @@ class Task(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="tasks")
+    @property
+    def timer_running(self) -> bool:
+        return self.timer_started_at is not None
 
 
 class Note(Base):
@@ -54,8 +59,24 @@ class Sheet(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
-    data = Column(JSON, default={"cols": [], "rows": []})
+    data = Column(JSON, default=lambda: {"cols": [], "rows": []})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="sheets")
+
+
+class TaskActivity(Base):
+    __tablename__ = "task_activity"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    task_id = Column(Integer, nullable=False, index=True)
+    task_title = Column(String, nullable=False)
+    action = Column(String, nullable=False, index=True)
+    from_value = Column(String, nullable=True)
+    to_value = Column(String, nullable=True)
+    meta = Column("metadata", Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    owner = relationship("User", back_populates="activities")

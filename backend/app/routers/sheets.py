@@ -17,15 +17,9 @@ def get_sheets(current_user: User = Depends(get_current_user), db: Session = Dep
 @router.post("", response_model=SheetResponse, status_code=status.HTTP_201_CREATED)
 def create_sheet(sheet: SheetCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     default_data = {
-        "cols": [{"key": "A"}, {"key": "B"}, {"key": "C"}, {"key": "D"}, {"key": "E"}],
-        "rows": [
-            [{}, {}, {}, {}, {}],
-            [{}, {}, {}, {}, {}],
-            [{}, {}, {}, {}, {}],
-            [{}, {}, {}, {}, {}],
-            [{}, {}, {}, {}, {}],
-            [{}, {}, {}, {}, {}],
-        ]
+        "cols": ["A", "B", "C", "D", "E", "F", "G", "H"],
+        "rows": [["" for _ in range(8)] for _ in range(20)],
+        "formats": {},
     }
     db_sheet = Sheet(
         user_id=current_user.id,
