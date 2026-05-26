@@ -1,0 +1,22 @@
+[launcher] Ensuring frontend dependencies are installed and build approvals accepted
+bash: line 6: BASH_SOURCE[0]: unbound variable
+[launcher] Running pnpm approve-builds in workspace: /
+[EACCES] EACCES: permission denied, open '/_tmp_19484_991948036d9ee9e49f26cad008cc5048'
+
+
+
+There are no packages awaiting approval
+[EACCES] EACCES: permission denied, open '/_tmp_19527_2e4a321f7344d6dc4f22c2444775ab1d'
+
+
+
+$ vite --config vite.config.ts --host 0.0.0.0
+error when starting dev server:
+Error: Port 5173 is already in use
+    at Server.onError$1 (file:///home/punith/Linux/MERIDIAN/Meridian-Code-Flow/Meridian-Code-6:01:15 PM [vite] http proxy error: /api/auth/register
+Error: connect ECONNREFUSED 127.0.0.1:8000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+ Server.emit (node:events:509:28)
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[ELIFECYCLE] Command failed with exit code 1.

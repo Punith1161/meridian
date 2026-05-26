@@ -17,9 +17,15 @@ def get_sheets(current_user: User = Depends(get_current_user), db: Session = Dep
 @router.post("", response_model=SheetResponse, status_code=status.HTTP_201_CREATED)
 def create_sheet(sheet: SheetCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     default_data = {
-        "cols": ["A", "B", "C", "D", "E", "F", "G", "H"],
-        "rows": [["" for _ in range(8)] for _ in range(20)],
-        "formats": {},
+        "cols": ["A", "B", "C", "D", "E"],
+        "rows": [
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+        ]
     }
     db_sheet = Sheet(
         user_id=current_user.id,
@@ -46,7 +52,7 @@ def update_sheet(sheet_id: int, sheet_update: SheetUpdate, current_user: User = 
     if not sheet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sheet not found")
     
-    update_data = sheet_update.dict(exclude_unset=True)
+    update_data = sheet_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(sheet, field, value)
     

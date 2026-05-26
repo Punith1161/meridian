@@ -16,7 +16,7 @@ def get_notes(current_user: User = Depends(get_current_user), db: Session = Depe
 
 @router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 def create_note(note: NoteCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_note = Note(user_id=current_user.id, **note.dict())
+    db_note = Note(user_id=current_user.id, **note.model_dump())
     db.add(db_note)
     db.commit()
     db.refresh(db_note)
@@ -37,7 +37,7 @@ def update_note(note_id: int, note_update: NoteUpdate, current_user: User = Depe
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     
-    update_data = note_update.dict(exclude_unset=True)
+    update_data = note_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(note, field, value)
     
