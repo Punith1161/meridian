@@ -6,14 +6,22 @@ from app.activity import log_task_activity
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Task, User
-from app.schemas import TaskCreate, TaskReorderInput, TaskResponse, TaskStatusUpdate, TaskUpdate
+from app.schemas import (
+    TaskCreate,
+    TaskReorderInput,
+    TaskResponse,
+    TaskStatusUpdate,
+    TaskUpdate,
+)
 from app.serializers import serialize_task
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=list[TaskResponse])
-def get_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_tasks(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     tasks = (
         db.query(Task)
         .filter(Task.user_id == current_user.id)
@@ -24,7 +32,11 @@ def get_tasks(current_user: User = Depends(get_current_user), db: Session = Depe
 
 
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def create_task(task: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_task(
+    task: TaskCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     max_position = (
         db.query(func.max(Task.position))
         .filter(and_(Task.user_id == current_user.id, Task.status == task.status.value))
@@ -57,19 +69,40 @@ def create_task(task: TaskCreate, current_user: User = Depends(get_current_user)
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == current_user.id).first()
+def get_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
     return serialize_task(task)
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
-def update_task(task_id: int, task_update: TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == current_user.id).first()
+def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     update_data = task_update.model_dump(exclude_unset=True)
     if "priority" in update_data and update_data["priority"] is not None:
         update_data["priority"] = update_data["priority"].value
@@ -89,18 +122,29 @@ def update_task(task_id: int, task_update: TaskUpdate, current_user: User = Depe
             action="updated",
             metadata=", ".join(changes),
         )
-    
+
     db.commit()
     db.refresh(task)
     return serialize_task(task)
 
 
 @router.patch("/{task_id}/status", response_model=TaskResponse)
-def update_task_status(task_id: int, status_update: TaskStatusUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == current_user.id).first()
+def update_task_status(
+    task_id: int,
+    status_update: TaskStatusUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     previous = task.status
     task.status = status_update.status.value
     if previous != task.status:
@@ -125,7 +169,11 @@ def update_task_status(task_id: int, status_update: TaskStatusUpdate, current_us
 
 
 @router.post("/reorder", response_model=list[TaskResponse])
-def reorder_tasks(payload: TaskReorderInput, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def reorder_tasks(
+    payload: TaskReorderInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     items = payload.items
     if not items:
         return []
@@ -139,7 +187,9 @@ def reorder_tasks(payload: TaskReorderInput, current_user: User = Depends(get_cu
     by_id = {task.id: task for task in tasks}
 
     if len(by_id) != len(task_ids):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Some tasks were not found")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Some tasks were not found"
+        )
 
     for item in items:
         task = by_id[item.task_id]
@@ -169,11 +219,21 @@ def reorder_tasks(payload: TaskReorderInput, current_user: User = Depends(get_cu
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == current_user.id).first()
+def delete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     log_task_activity(
         db,
         task=task,

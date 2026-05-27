@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.database import Base, engine, run_schema_migrations
-from app.routers import activity, auth, notes, sheets, summary, tasks, timer
+from app.routers import activity, auth, calendar, notes, sheets, summary, tasks, timer
 
 load_dotenv()
 
@@ -29,6 +29,7 @@ run_schema_migrations()
 app.include_router(auth.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(timer.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
 app.include_router(notes.router, prefix="/api")
 app.include_router(sheets.router, prefix="/api")
 app.include_router(summary.router, prefix="/api")

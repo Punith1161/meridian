@@ -11,7 +11,9 @@ router = APIRouter(prefix="/summary", tags=["summary"])
 
 
 @router.get("/today", response_model=TodaySummary)
-def get_today_summary(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_today_summary(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     today = date.today()
 
     all_tasks = db.query(Task).filter(Task.user_id == current_user.id).all()
@@ -38,7 +40,9 @@ def get_today_summary(current_user: User = Depends(get_current_user), db: Sessio
 
 
 @router.get("/task-stats", response_model=TaskStats)
-def get_task_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_task_stats(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     tasks = db.query(Task).filter(Task.user_id == current_user.id).all()
     by_status = {"todo": 0, "inprogress": 0, "done": 0}
     by_priority = {"high": 0, "medium": 0, "low": 0}

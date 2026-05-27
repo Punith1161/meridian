@@ -114,6 +114,41 @@ class SheetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CalendarEventCreate(BaseModel):
+    title: str = Field(min_length=1)
+    start_at: datetime
+    end_at: datetime
+    all_day: bool = False
+    location: str | None = None
+    description: str | None = None
+    color: str | None = None
+
+
+class CalendarEventUpdate(BaseModel):
+    title: str | None = None
+    start_at: datetime | None = None
+    end_at: datetime | None = None
+    all_day: bool | None = None
+    location: str | None = None
+    description: str | None = None
+    color: str | None = None
+
+
+class CalendarEventResponse(BaseModel):
+    id: int
+    title: str
+    start_at: datetime
+    end_at: datetime
+    all_day: bool
+    location: str | None
+    description: str | None
+    color: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

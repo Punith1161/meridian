@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.models import Task
+from app.models import CalendarEvent, Task
 
 
 def _elapsed_seconds_since(started_at: datetime, now: datetime | None = None) -> int:
@@ -26,4 +26,19 @@ def serialize_task(task: Task) -> dict:
         "position": task.position,
         "created_at": task.created_at,
         "updated_at": task.updated_at,
+    }
+
+
+def serialize_calendar_event(event: CalendarEvent) -> dict:
+    return {
+        "id": event.id,
+        "title": event.title,
+        "start_at": event.start_at,
+        "end_at": event.end_at,
+        "all_day": event.all_day,
+        "location": event.location,
+        "description": event.description,
+        "color": event.color,
+        "created_at": event.created_at,
+        "updated_at": event.updated_at,
     }

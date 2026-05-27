@@ -28,7 +28,9 @@ def run_schema_migrations() -> None:
     task_columns = {col["name"] for col in insp.get_columns("tasks")}
     with engine.begin() as conn:
         if "position" not in task_columns:
-            conn.execute(text("ALTER TABLE tasks ADD COLUMN position INTEGER NOT NULL DEFAULT 0"))
+            conn.execute(
+                text("ALTER TABLE tasks ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
+            )
 
 
 def get_db():

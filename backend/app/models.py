@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -16,6 +16,7 @@ class User(Base):
     notes = relationship("Note", back_populates="owner")
     sheets = relationship("Sheet", back_populates="owner")
     activity = relationship("TaskActivity", back_populates="owner")
+    calendar_events = relationship("CalendarEvent", back_populates="owner")
 
 
 class Task(Base):
@@ -77,3 +78,21 @@ class TaskActivity(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="activity")
+
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    start_at = Column(DateTime, nullable=False)
+    end_at = Column(DateTime, nullable=False)
+    all_day = Column(Boolean, default=False, nullable=False)
+    location = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    color = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    owner = relationship("User", back_populates="calendar_events")
