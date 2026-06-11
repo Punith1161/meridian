@@ -3,73 +3,88 @@
 @import "./editor.css";
 
 @theme {
-  --color-background:         hsl(var(--background));
-  --color-foreground:         hsl(var(--foreground));
-  --color-card:               hsl(var(--card));
-  --color-card-foreground:    hsl(var(--card-foreground));
-  --color-popover:            hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary:            hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary:          hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted:              hsl(var(--muted));
-  --color-muted-foreground:   hsl(var(--muted-foreground));
-  --color-accent:             hsl(var(--accent));
-  --color-accent-foreground:  hsl(var(--accent-foreground));
-  --color-destructive:        hsl(var(--destructive));
+  --color-background:             hsl(var(--background));
+  --color-foreground:             hsl(var(--foreground));
+  --color-card:                   hsl(var(--card));
+  --color-card-foreground:        hsl(var(--card-foreground));
+  --color-popover:                hsl(var(--popover));
+  --color-popover-foreground:     hsl(var(--popover-foreground));
+  --color-popover-border:         hsl(var(--border));
+  --color-primary:                hsl(var(--primary));
+  --color-primary-foreground:     hsl(var(--primary-foreground));
+  --color-secondary:              hsl(var(--secondary));
+  --color-secondary-foreground:   hsl(var(--secondary-foreground));
+  --color-muted:                  hsl(var(--muted));
+  --color-muted-foreground:       hsl(var(--muted-foreground));
+  --color-accent:                 hsl(var(--accent));
+  --color-accent-foreground:      hsl(var(--accent-foreground));
+  --color-destructive:            hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border:             hsl(var(--border));
-  --color-input:              hsl(var(--input));
-  --color-ring:               hsl(var(--ring));
-  --radius-DEFAULT:           var(--radius);
+  --color-border:                 hsl(var(--border));
+  --color-input:                  hsl(var(--input));
+  --color-ring:                   hsl(var(--ring));
+  --color-sidebar:                hsl(var(--sidebar));
+  --color-sidebar-foreground:     hsl(var(--sidebar-foreground));
+  --color-sidebar-border:         hsl(var(--sidebar-border));
+  --radius-DEFAULT:               var(--radius);
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
-    --radius: 0.5rem;
-    --sidebar-width: 220px;
+    /* Light mode — warm off-white, not stark white */
+    --background:               40 20% 96%;
+    --foreground:                0  0% 13%;
+    --card:                      0  0% 100%;
+    --card-foreground:           0  0% 13%;
+    --popover:                   0  0% 100%;
+    --popover-foreground:        0  0% 13%;
+    --primary:                 206 100% 40%;
+    --primary-foreground:        0  0% 100%;
+    --secondary:                40 10% 92%;
+    --secondary-foreground:      0  0% 13%;
+    --muted:                    40 10% 92%;
+    --muted-foreground:          0  0% 45%;
+    --accent:                   40 10% 89%;
+    --accent-foreground:         0  0% 13%;
+    --destructive:               0 72% 51%;
+    --destructive-foreground:    0  0% 98%;
+    --border:                   40  8% 86%;
+    --input:                    40  8% 86%;
+    --ring:                    206 100% 40%;
+    --radius:                   0.5rem;
+    --sidebar:                 220 15% 17%;
+    --sidebar-foreground:        0  0% 90%;
+    --sidebar-border:          220 10% 21%;
   }
 
   .dark {
-    --background: 240 6% 7%;
-    --foreground: 0 0% 90%;
-    --card: 240 6% 10%;
-    --card-foreground: 0 0% 90%;
-    --popover: 240 6% 10%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 262 83% 64%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 90%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 55%;
-    --accent: 240 4% 18%;
-    --accent-foreground: 0 0% 90%;
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 18%;
-    --input: 240 4% 18%;
-    --ring: 262 83% 64%;
+    /* VS Code Dark+ theme */
+    --background:                0  0% 12%;   /* #1e1e1e */
+    --foreground:                0  0% 83%;   /* #d4d4d4 */
+    --card:                    240  1% 15%;   /* #252526 */
+    --card-foreground:           0  0% 83%;
+    --popover:                 240  1% 15%;
+    --popover-foreground:        0  0% 83%;
+    --primary:                 206 100% 42%;  /* #0078d4 — VS Code blue */
+    --primary-foreground:        0  0% 100%;
+    --secondary:                 0  0% 19%;   /* #303030 */
+    --secondary-foreground:      0  0% 78%;
+    --muted:                     0  0% 19%;
+    --muted-foreground:          0  0% 52%;   /* #858585 */
+    --accent:                  240  3% 23%;   /* #37373d */
+    --accent-foreground:         0  0% 83%;
+    --destructive:               0 72% 56%;   /* #f44747 */
+    --destructive-foreground:    0  0% 98%;
+    --border:                    0  0% 27%;   /* #454545 */
+    --input:                     0  0% 24%;   /* #3c3c3c */
+    --ring:                    206 100% 42%;
+    --sidebar:                   0  0% 13%;   /* #212121 — VS Code activity bar */
+    --sidebar-foreground:        0  0% 78%;
+    --sidebar-border:            0  0% 20%;   /* #333333 */
+  }
+
+  html {
+    font-size: 110%;
   }
 
   * {
@@ -81,18 +96,51 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* ── Animations ───────────────────────────────────────────────────────────── */
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: translateY(0);   }
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
+
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0);    }
+  }
+
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1);    }
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .animate-page-in    { animation: page-in     0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-fade-in    { animation: fade-in     0.18s ease both; }
+  .animate-slide-in   { animation: slide-in-left 0.18s ease both; }
+  .animate-scale-in   { animation: scale-in    0.16s ease both; }
+
+  /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    background: hsl(var(--border));
+    border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* ── Focus ring ────────────────────────────────────────────────────────────── */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }

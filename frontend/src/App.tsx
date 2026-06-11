@@ -54,7 +54,7 @@ function NotFound() {
 }
 
 function AppShell() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { token } = useAuth();
 
   if (!token) return <Redirect to="/login" />;
@@ -85,7 +85,7 @@ function AppShell() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <main className="flex-1 ml-14 flex flex-col overflow-hidden">
+      <main key={location} className="flex-1 ml-14 flex flex-col overflow-hidden animate-page-in">
         <Switch>
           <Route path="/"          component={Kanban} />
           <Route path="/today"     component={Today} />

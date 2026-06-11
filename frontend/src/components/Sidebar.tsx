@@ -51,7 +51,7 @@ export function Sidebar({ onOpenPalette }: SidebarProps) {
 
       {/* Nav items */}
       <nav className="flex flex-col items-center gap-0.5 flex-1">
-        {navItems.map(({ href, icon: Icon, label, shortcut }) => {
+        {navItems.map(({ href, icon: Icon, label, shortcut }, idx) => {
           const isActive = href === "/" ? location === "/" : location.startsWith(href);
           return (
             <Tooltip key={href} delayDuration={200}>
@@ -59,9 +59,10 @@ export function Sidebar({ onOpenPalette }: SidebarProps) {
                 <Link href={href}>
                   <button
                     data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-150 ${
+                    style={{ animationDelay: `${idx * 35}ms` }}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-150 animate-slide-in ${
                       isActive
-                        ? "bg-accent text-accent-foreground shadow-sm"
+                        ? "bg-primary/20 text-primary shadow-sm"
                         : "text-sidebar-foreground/60 hover:bg-accent/60 hover:text-sidebar-foreground"
                     }`}
                   >

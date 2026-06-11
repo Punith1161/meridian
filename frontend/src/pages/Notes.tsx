@@ -634,7 +634,7 @@ export default function Notes() {
       {/* ── Editor panel ──────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {!selectedId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 animate-fade-in">
             <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
               <FileText size={28} className="text-muted-foreground/30" />
             </div>
@@ -651,63 +651,68 @@ export default function Notes() {
           </div>
         ) : (
           <>
-            {/* ── Note header ─────────────────────────────────────────────── */}
-            <div className="flex-shrink-0 px-7 pt-5 pb-3 border-b border-border/50">
-              {/* Title */}
-              <input
-                ref={titleRef}
-                data-testid="input-note-title"
-                value={localTitle}
-                onChange={e => handleTitleChange(e.target.value)}
-                placeholder="Untitled"
-                className="w-full text-xl font-bold bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/30 leading-tight"
-                onKeyDown={e => e.key === "Enter" && editor?.commands.focus()}
-              />
-
-              {/* Metadata row */}
-              <div className="flex items-center gap-4 mt-2 flex-wrap">
-                {/* Notebook badge */}
-                {selectedNote?.notebook_id && (
-                  <span
-                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
-                  >
-                    <BookOpen size={10} />
-                    {(notebooks as Notebook[]).find(nb => nb.id === selectedNote?.notebook_id)?.name ?? "Notebook"}
-                  </span>
-                )}
-
-                {/* Pin */}
-                <button
-                  onClick={() => selectedNote && handlePin(selectedNote)}
-                  className={`flex items-center gap-1 text-[11px] transition-colors ${
-                    selectedNote?.pinned ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Pin size={10} />
-                  {selectedNote?.pinned ? "Pinned" : "Pin"}
-                </button>
-
-                {/* Tags */}
-                <div className="flex items-center gap-1.5">
-                  <Tag size={10} className="text-muted-foreground" />
-                  <TagInput tags={localTags} onChange={handleTagsChange} />
-                </div>
-
-                {/* Save indicator + word count */}
-                <div className="ml-auto flex items-center gap-3 text-[10px] text-muted-foreground/50">
-                  {saving && <span className="animate-pulse text-muted-foreground">Saving…</span>}
-                  <span>{wordCount} words</span>
-                  <span>{charCount} chars</span>
-                </div>
-              </div>
+            {/* ── Formatting toolbar — sticky at top ───────────────────────── */}
+            <div className="flex-shrink-0 bg-card border-b border-border/60 shadow-sm">
+              <Toolbar editor={editor} />
             </div>
 
-            {/* ── Formatting toolbar ───────────────────────────────────────── */}
-            <Toolbar editor={editor} />
+            {/* ── Scrollable canvas — OneNote page-in-page ─────────────────── */}
+            <div
+              className="flex-1 overflow-y-auto bg-muted/20 px-6 py-8"
+              onClick={(e) => { if (e.target === e.currentTarget) editor?.commands.focus(); }}
+            >
+              <div className="max-w-3xl mx-auto animate-page-in">
+                {/* Page card */}
+                <div className="bg-card rounded-xl shadow-lg overflow-hidden border border-border/40">
 
-            {/* ── Editor content ───────────────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto relative" onClick={() => editor?.commands.focus()}>
-              <EditorContent editor={editor} className="h-full" />
+                  {/* Title + metadata */}
+                  <div className="px-10 pt-8 pb-5 border-b border-border/40">
+                    <input
+                      ref={titleRef}
+                      data-testid="input-note-title"
+                      value={localTitle}
+                      onChange={e => handleTitleChange(e.target.value)}
+                      placeholder="Untitled"
+                      className="w-full text-2xl font-bold bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/25 leading-tight"
+                      onKeyDown={e => e.key === "Enter" && editor?.commands.focus()}
+                    />
+
+                    <div className="flex items-center gap-4 mt-3 flex-wrap">
+                      {selectedNote?.notebook_id && (
+                        <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <BookOpen size={10} />
+                          {(notebooks as Notebook[]).find(nb => nb.id === selectedNote?.notebook_id)?.name ?? "Notebook"}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => selectedNote && handlePin(selectedNote)}
+                        className={`flex items-center gap-1 text-[11px] transition-colors ${
+                          selectedNote?.pinned ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Pin size={10} />
+                        {selectedNote?.pinned ? "Pinned" : "Pin"}
+                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <Tag size={10} className="text-muted-foreground" />
+                        <TagInput tags={localTags} onChange={handleTagsChange} />
+                      </div>
+                      <div className="ml-auto flex items-center gap-3 text-[10px] text-muted-foreground/50">
+                        {saving && <span className="animate-pulse text-muted-foreground">Saving…</span>}
+                        <span>{wordCount} words · {charCount} chars</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Editor content */}
+                  <div onClick={() => editor?.commands.focus()}>
+                    <EditorContent editor={editor} />
+                  </div>
+                </div>
+
+                {/* Spacer so last line doesn't hug bottom */}
+                <div className="h-16" />
+              </div>
             </div>
 
             {/* ── Status bar ───────────────────────────────────────────────── */}
@@ -716,7 +721,7 @@ export default function Notes() {
                 {selectedNote && formatDistanceToNow(new Date(selectedNote.updated_at), { addSuffix: true })}
               </span>
               <span className="ml-auto">
-                / for commands · Ctrl+Z undo · Ctrl+B bold · Ctrl+I italic · Ctrl+U underline
+                / for commands · Ctrl+Z undo · Ctrl+B bold · Ctrl+I italic
               </span>
             </div>
           </>

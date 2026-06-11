@@ -75,7 +75,7 @@ export default function Sheets() {
   });
 
   const createSheet = useMutation({
-    mutationFn: (data: { name: string }) => api.post<Sheet>("/sheets", data),
+    mutationFn: (payload: { name: string; data?: SheetData }) => api.post<Sheet>("/sheets", payload),
     onSuccess: (s) => { qc.invalidateQueries({ queryKey: ["sheets"] }); setSelectedId(s.id); },
   });
 
@@ -127,7 +127,7 @@ export default function Sheets() {
     }, 1200);
   }, [selectedId, updateSheet]);
 
-  const handleCreate = () => createSheet.mutate({ name: "Sheet 1" });
+  const handleCreate = () => createSheet.mutate({ name: "Sheet 1", data: makeDefault() });
 
   const handleDelete = async (sheetId: number) => {
     if (deleteConfirm === sheetId) {
