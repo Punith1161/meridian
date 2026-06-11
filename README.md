@@ -17,7 +17,7 @@ A self-hosted, offline-capable workspace that installs on **Windows and Linux** 
 | **Notes** | OneNote-style rich block editor with notebooks |
 | **Kanban** | Drag-and-drop task board |
 
-**Stack:** FastAPI · SQLite · React 18 · Vite · TypeScript · TailwindCSS v4 · Electron
+**Stack:** FastAPI · SQLite · React 18 · Vite · TypeScript · TailwindCSS v4
 
 ---
 
@@ -171,8 +171,6 @@ meridian/
 │   │   ├── context/            AuthContext (JWT management)
 │   │   ├── styles/             Global CSS, FullCalendar theme, Tiptap theme
 │   │   └── utils/              api.ts, formatTime.ts
-│   ├── electron-main.cjs       Electron main process
-│   ├── electron-preload.cjs    Electron context bridge
 │   ├── package.json            Dependencies + build config
 │   └── vite.config.ts          Vite + proxy config
 │
@@ -191,28 +189,6 @@ FastAPI auto-generates interactive API docs:
 - **Swagger UI:** http://localhost:8000/api/docs
 - **ReDoc:** http://localhost:8000/api/redoc
 - **OpenAPI JSON:** http://localhost:8000/api/openapi.json
-
----
-
-## Building Desktop Apps
-
-### Windows installer (.exe)
-```bash
-cd frontend
-npm run package:win
-# Output: dist-electron/MERIDIAN Setup *.exe
-```
-
-### Linux AppImage
-```bash
-cd frontend
-npm run package:linux
-# Output: dist-electron/MERIDIAN-*.AppImage
-```
-
-**Prerequisites for Electron packaging:**
-1. Python backend must be bundled. See `electron-main.cjs` for details.
-2. For Windows: run on a Windows machine or use WSL2 + wine for cross-compilation.
 
 ---
 
@@ -246,23 +222,6 @@ DATABASE_URL=postgresql://user:password@localhost:5432/meridian
 | `Ctrl/⌘ + N` | New note (in Notes page) |
 | `Ctrl/⌘ + B` | Bold (in editor) |
 | `Ctrl/⌘ + I` | Italic (in editor) |
-
----
-
-## Bugs Fixed
-
-| # | Bug | Fix |
-|---|-----|-----|
-| 1 | `datetime.utcnow()` Python 3.12 deprecation | Replaced with `datetime.now(timezone.utc)` everywhere |
-| 2 | `SECRET_KEY=replace-with-a-long-random-secret` placeholder | Auto-generated on first run |
-| 3 | Timer keeps running after task marked done | `_auto_stop_timer()` called on status change and drag-to-done |
-| 4 | Duplicate icons in sidebar (Today + Calendar both `CalendarDays`) | Today → `LayoutDashboard`, Calendar → `CalendarRange` |
-| 5 | `⌘6`/`⌘7` shortcuts inverted vs sidebar labels | Fixed in App.tsx |
-| 6 | `react-quill` React 18 StrictMode warnings | Replaced with Tiptap |
-| 7 | No search on notes | Added `?search=` query param with ILIKE |
-| 8 | No notebook support for notes | Full Notebooks feature |
-| 9 | `psycopg2-binary` and `passlib[bcrypt]` unused deps | Removed from requirements.txt |
-| 10 | Workspace imports (`@workspace/api-client-react`) broken in standalone setup | Replaced with direct `api.ts` calls |
 
 ---
 

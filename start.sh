@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 FRONTEND_DIR="$REPO_ROOT/frontend"
-VENV_DIR="$BACKEND_DIR/.venv"
+VENV_DIR="$BACKEND_DIR/venv"
 PROD=false
 
 for arg in "$@"; do
@@ -24,6 +24,21 @@ if [ ! -d "$VENV_DIR" ]; then
   exit 1
 fi
 source "$VENV_DIR/bin/activate"
+
+# Force-free ports before starting
+free_port() {
+  local port=$1
+  local pids
+  pids=$(lsof -ti :"$port" 2>/dev/null || true)
+  if [ -n "$pids" ]; then
+    echo "[MERIDIAN] Freeing port $port (PIDs: $pids)..."
+    kill -9 $pids 2>/dev/null || true
+    sleep 0.5
+  fi
+}
+
+free_port 8000
+free_port 5173
 
 cleanup() {
   echo ""

@@ -107,7 +107,9 @@ function AuthGate() {
   if (isLoading) return <LoadingScreen />;
   return (
     <Switch>
-      <Route path="/login" component={Login} />
+      <Route path="/login">
+        {token ? <Redirect to="/" /> : <Login />}
+      </Route>
       {token ? <Route component={AppShell} /> : <Redirect to="/login" />}
     </Switch>
   );
