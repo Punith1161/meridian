@@ -340,7 +340,7 @@ export default function Notes() {
     ],
     content: "",
     editorProps: {
-      attributes: { class: "tiptap-editor" },
+      attributes: { class: "prosemirror-content" },
       handleKeyDown: (_view, event) => {
         // Slash command
         if (event.key === "/" && !slashMenu.visible) {
@@ -705,7 +705,7 @@ export default function Notes() {
                   </div>
 
                   {/* Editor content */}
-                  <div onClick={() => editor?.commands.focus()}>
+                  <div className="tiptap-editor" onClick={() => editor?.commands.focus()}>
                     <EditorContent editor={editor} />
                   </div>
                 </div>

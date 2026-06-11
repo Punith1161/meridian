@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Switch, Route, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
+import { CommandPalette } from "@/components/CommandPalette";
 
 // Pages
 import Login    from "@/pages/Login";
@@ -56,6 +57,7 @@ function NotFound() {
 function AppShell() {
   const [location, setLocation] = useLocation();
   const { token } = useAuth();
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   if (!token) return <Redirect to="/login" />;
 
@@ -63,20 +65,12 @@ function AppShell() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return;
+      if (e.key === "k") { e.preventDefault(); setPaletteOpen(true); return; }
       const map: Record<string, string> = {
-        "1": "/",
-        "2": "/today",
-        "3": "/tasks",
-        "4": "/notes",
-        "5": "/sheets",
-        "6": "/calendar",
-        "7": "/habits",
-        "8": "/activity",
+        "1": "/", "2": "/today", "3": "/tasks", "4": "/notes",
+        "5": "/sheets", "6": "/calendar", "7": "/habits", "8": "/activity",
       };
-      if (map[e.key]) {
-        e.preventDefault();
-        setLocation(map[e.key]);
-      }
+      if (map[e.key]) { e.preventDefault(); setLocation(map[e.key]); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -84,7 +78,7 @@ function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
+      <Sidebar onOpenPalette={() => setPaletteOpen(true)} />
       <main key={location} className="flex-1 ml-14 flex flex-col overflow-hidden animate-page-in">
         <Switch>
           <Route path="/"          component={Kanban} />
@@ -98,6 +92,7 @@ function AppShell() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

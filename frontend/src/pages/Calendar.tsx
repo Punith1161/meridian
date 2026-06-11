@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
-import type { EventClickArg, DateSelectArg, EventDropArg, EventResizeDoneArg } from "@fullcalendar/core";
+import type { EventClickArg, DateSelectArg, EventDropArg } from "@fullcalendar/core";
+import type { EventResizeDoneArg } from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
@@ -9,10 +10,8 @@ import "../styles/fullcalendar.css";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addHours, isToday } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -777,169 +776,187 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-40" onClick={() => setPeekEvent(null)} />
       )}
 
-      {/* ── Create/Edit modal ─────────────────────────────────────────────── */}
-      <Dialog open={modalOpen} onOpenChange={open => { if (!open) setModalOpen(false); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon size={16} className="text-primary" />
-              {editingId ? "Edit event" : "New event"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-1">
-            {/* Title */}
-            <Input
-              value={draft.title}
-              onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
-              placeholder="Add title"
-              className="text-base font-medium border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-              autoFocus
-              onKeyDown={e => e.key === "Enter" && handleSave()}
-            />
-
-            {/* All day toggle */}
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox
-                checked={draft.allDay}
-                onCheckedChange={checked => {
-                  const allDay = Boolean(checked);
-                  setDraft(d => ({
-                    ...d, allDay,
-                    start: allDay ? d.start.slice(0,10) : `${d.start.slice(0,10)}T09:00`,
-                    end:   allDay ? d.end.slice(0,10)   : `${d.end.slice(0,10)}T10:00`,
-                  }));
-                }}
-              />
-              <span className="text-muted-foreground">All day</span>
-            </label>
-
-            {/* Start / End */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Start</label>
-                <Input
-                  type={draft.allDay ? "date" : "datetime-local"}
-                  value={draft.start}
-                  onChange={e => setDraft(d => ({ ...d, start: e.target.value }))}
-                  className="text-sm h-8"
-                />
+      {/* ── Event form side panel ─────────────────────────────────────────── */}
+      {modalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => !saveMutation.isPending && setModalOpen(false)}
+          />
+          {/* Panel */}
+          <div className="fixed right-0 top-0 h-full w-full max-w-sm z-50 bg-card border-l border-border flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: draft.color + "22", color: draft.color }}>
+                  <CalendarIcon size={14} />
+                </div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {editingId ? "Edit event" : "New event"}
+                </h2>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">End</label>
-                <Input
-                  type={draft.allDay ? "date" : "datetime-local"}
-                  value={draft.end}
-                  onChange={e => setDraft(d => ({ ...d, end: e.target.value }))}
-                  className="text-sm h-8"
-                />
-              </div>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <X size={15} />
+              </button>
             </div>
 
-            {/* Location */}
-            <div className="flex items-center gap-2.5">
-              <MapPin size={14} className="text-muted-foreground flex-shrink-0" />
+            {/* Scrollable form body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+              {/* Title */}
               <Input
-                value={draft.location}
-                onChange={e => setDraft(d => ({ ...d, location: e.target.value }))}
-                placeholder="Add location"
-                className="h-8 text-sm border-0 border-b rounded-none px-0 focus-visible:ring-0"
+                value={draft.title}
+                onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
+                placeholder="Event title"
+                autoFocus
+                className="text-base font-medium bg-transparent border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground/40"
+                onKeyDown={e => e.key === "Enter" && handleSave()}
               />
-            </div>
 
-            {/* Recurrence */}
-            <div className="flex items-center gap-2.5">
-              <Repeat size={14} className="text-muted-foreground flex-shrink-0" />
-              <Select value={draft.recurrence} onValueChange={v => setDraft(d => ({ ...d, recurrence: v }))}>
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {RECURRENCE_OPTIONS.map(r => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              {/* All day toggle */}
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+                <div
+                  onClick={() => {
+                    const allDay = !draft.allDay;
+                    setDraft(d => ({
+                      ...d, allDay,
+                      start: allDay ? d.start.slice(0, 10) : `${d.start.slice(0, 10)}T09:00`,
+                      end:   allDay ? d.end.slice(0, 10)   : `${d.end.slice(0, 10)}T10:00`,
+                    }));
+                  }}
+                  className={`w-8 h-4 rounded-full transition-colors cursor-pointer ${draft.allDay ? "bg-primary" : "bg-muted-foreground/30"}`}
+                >
+                  <div className={`w-3 h-3 rounded-full bg-white shadow mt-0.5 transition-transform ${draft.allDay ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">All day</span>
+              </label>
+
+              {/* Start / End */}
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-1 font-medium uppercase tracking-wide">Start</p>
+                  <Input
+                    type={draft.allDay ? "date" : "datetime-local"}
+                    value={draft.start}
+                    onChange={e => setDraft(d => ({ ...d, start: e.target.value }))}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-1 font-medium uppercase tracking-wide">End</p>
+                  <Input
+                    type={draft.allDay ? "date" : "datetime-local"}
+                    value={draft.end}
+                    onChange={e => setDraft(d => ({ ...d, end: e.target.value }))}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-center gap-2.5">
+                <MapPin size={13} className="text-muted-foreground flex-shrink-0" />
+                <Input
+                  value={draft.location}
+                  onChange={e => setDraft(d => ({ ...d, location: e.target.value }))}
+                  placeholder="Location"
+                  className="h-8 text-sm bg-transparent border-0 border-b border-border/60 rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground/40"
+                />
+              </div>
+
+              {/* Recurrence */}
+              <div className="flex items-center gap-2.5">
+                <Repeat size={13} className="text-muted-foreground flex-shrink-0" />
+                <Select value={draft.recurrence} onValueChange={v => setDraft(d => ({ ...d, recurrence: v }))}>
+                  <SelectTrigger className="h-8 text-sm flex-1 border-0 border-b border-border/60 rounded-none px-0 focus:ring-0 bg-transparent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_OPTIONS.map(r => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Reminder */}
+              <div className="flex items-center gap-2.5">
+                <Bell size={13} className="text-muted-foreground flex-shrink-0" />
+                <Select value={draft.reminder_minutes} onValueChange={v => setDraft(d => ({ ...d, reminder_minutes: v }))}>
+                  <SelectTrigger className="h-8 text-sm flex-1 border-0 border-b border-border/60 rounded-none px-0 focus:ring-0 bg-transparent">
+                    <SelectValue placeholder="No reminder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REMINDER_OPTIONS.map(r => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Color category */}
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-2.5 font-medium uppercase tracking-wide">Color</p>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_CATEGORIES.map(cat => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setDraft(d => ({ ...d, color: cat.value }))}
+                      title={cat.label}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105"
+                      style={{
+                        background: cat.bg,
+                        color: cat.text,
+                        outline: draft.color === cat.value ? `2px solid ${cat.value}` : "2px solid transparent",
+                        outlineOffset: "2px",
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.value }} />
+                      {cat.label}
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+              </div>
 
-            {/* Reminder */}
-            <div className="flex items-center gap-2.5">
-              <Bell size={14} className="text-muted-foreground flex-shrink-0" />
-              <Select value={draft.reminder_minutes} onValueChange={v => setDraft(d => ({ ...d, reminder_minutes: v }))}>
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue placeholder="Add reminder" />
-                </SelectTrigger>
-                <SelectContent>
-                  {REMINDER_OPTIONS.map(r => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Color category */}
-            <div>
-              <label className="text-xs text-muted-foreground mb-2 block">Color category</label>
-              <div className="flex flex-wrap gap-1.5">
-                {COLOR_CATEGORIES.map(cat => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setDraft(d => ({ ...d, color: cat.value }))}
-                    title={cat.label}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                      draft.color === cat.value
-                        ? "ring-2 ring-offset-1 ring-offset-background scale-105"
-                        : "hover:scale-105"
-                    }`}
-                    style={{
-                      background: cat.bg,
-                      color: cat.text,
-                      borderColor: draft.color === cat.value ? cat.value : "transparent",
-                      ringColor: cat.value,
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.value }} />
-                    {cat.label}
-                  </button>
-                ))}
+              {/* Description */}
+              <div className="flex items-start gap-2.5">
+                <AlignLeft size={13} className="text-muted-foreground mt-2 flex-shrink-0" />
+                <Textarea
+                  value={draft.description}
+                  onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
+                  placeholder="Add a description…"
+                  className="min-h-[80px] text-sm bg-transparent border-0 border-b border-border/60 rounded-none px-0 focus-visible:ring-0 resize-none placeholder:text-muted-foreground/40"
+                />
               </div>
             </div>
 
-            {/* Description */}
-            <div className="flex items-start gap-2.5">
-              <AlignLeft size={14} className="text-muted-foreground mt-2 flex-shrink-0" />
-              <Textarea
-                value={draft.description}
-                onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
-                placeholder="Add description"
-                className="min-h-[72px] text-sm border-0 border-b rounded-none px-0 focus-visible:ring-0 resize-none"
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-2 border-t border-border">
+            {/* Footer actions */}
+            <div className="flex-shrink-0 px-5 py-4 border-t border-border flex items-center justify-between gap-2">
               {editingId ? (
-                <Button
-                  type="button" variant="ghost" size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                <button
                   onClick={() => handleDelete(editingId)}
                   disabled={deleteMutation.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                 >
-                  <Trash2 size={13} className="mr-1.5" /> Delete
-                </Button>
+                  <Trash2 size={13} /> Delete
+                </button>
               ) : <div />}
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => setModalOpen(false)}>
+                <Button variant="outline" size="sm" className="h-8" onClick={() => setModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" className="h-8" onClick={handleSave} disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? "Saving…" : editingId ? "Update" : "Create event"}
+                <Button size="sm" className="h-8 px-5" onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving…" : editingId ? "Update" : "Create"}
                 </Button>
               </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
     </div>
   );
 }

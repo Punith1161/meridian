@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/utils/api";
 import { Plus, Trash2, Table2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Download } from "lucide-react";
@@ -42,6 +42,65 @@ function colLabel(n: number): string {
 
 function makeCellKey(row: number, col: number) { return `${row}:${col}`; }
 
+// ─── Formula engine ────────────────────────────────────────────────────────────
+function colLabelToIndex(label: string): number {
+  let n = 0;
+  for (let i = 0; i < label.length; i++) n = n * 26 + (label.charCodeAt(i) - 64);
+  return n - 1;
+}
+
+function roundNum(n: number): number { return Math.round(n * 1e10) / 1e10; }
+
+function evaluateFormula(raw: string, data: SheetData, depth = 0): string | number {
+  if (!raw || !raw.startsWith("=")) return raw ?? "";
+  if (depth > 10) return "#REF!";
+  const expr = raw.slice(1).trim().toUpperCase();
+
+  const cellVal = (ref: string): number | string => {
+    const m = ref.match(/^([A-Z]+)(\d+)$/);
+    if (!m) return 0;
+    const c = colLabelToIndex(m[1]);
+    const r = parseInt(m[2]) - 1;
+    const v = String(data.rows[r]?.[c] ?? "");
+    if (v === "") return 0;
+    const ev = v.startsWith("=") ? evaluateFormula(v, data, depth + 1) : v;
+    const n = parseFloat(String(ev));
+    return isNaN(n) ? String(ev) : n;
+  };
+
+  const rangeNums = (range: string): number[] => {
+    if (!range.includes(":")) { const v = cellVal(range); return typeof v === "number" ? [v] : []; }
+    const [s, e] = range.split(":");
+    const sm = s.match(/^([A-Z]+)(\d+)$/), em = e.match(/^([A-Z]+)(\d+)$/);
+    if (!sm || !em) return [];
+    const sc = colLabelToIndex(sm[1]), ec = colLabelToIndex(em[1]);
+    const sr = parseInt(sm[2]) - 1, er = parseInt(em[2]) - 1;
+    const nums: number[] = [];
+    for (let r = sr; r <= er; r++) {
+      for (let c = sc; c <= ec; c++) {
+        const v = String(data.rows[r]?.[c] ?? "");
+        if (v !== "") { const n = parseFloat(v); if (!isNaN(n)) nums.push(n); }
+      }
+    }
+    return nums;
+  };
+
+  try {
+    let m: RegExpMatchArray | null;
+    if ((m = expr.match(/^SUM\(([^)]+)\)$/)))     { const ns = rangeNums(m[1]); return roundNum(ns.reduce((a, b) => a + b, 0)); }
+    if ((m = expr.match(/^AVERAGE\(([^)]+)\)$/))) { const ns = rangeNums(m[1]); return ns.length ? roundNum(ns.reduce((a,b)=>a+b,0)/ns.length) : 0; }
+    if ((m = expr.match(/^COUNT\(([^)]+)\)$/)))   { return rangeNums(m[1]).length; }
+    if ((m = expr.match(/^MAX\(([^)]+)\)$/)))     { const ns = rangeNums(m[1]); return ns.length ? Math.max(...ns) : 0; }
+    if ((m = expr.match(/^MIN\(([^)]+)\)$/)))     { const ns = rangeNums(m[1]); return ns.length ? Math.min(...ns) : 0; }
+    if ((m = expr.match(/^([A-Z]+\d+)$/)))        return cellVal(m[1]);
+    const evStr = expr.replace(/([A-Z]+\d+)/g, (ref) => String(cellVal(ref)));
+    // eslint-disable-next-line no-new-func
+    const res = new Function('"use strict"; return (' + evStr + ")")();
+    if (typeof res === "number") return isFinite(res) ? roundNum(res) : "#DIV/0!";
+    return res;
+  } catch { return "#ERROR!"; }
+}
+
 const DEFAULT_COLS = 8;
 const DEFAULT_ROWS = 20;
 
@@ -59,6 +118,7 @@ export default function Sheets() {
   const [localName, setLocalName]           = useState("");
   const [localData, setLocalData]           = useState<SheetData>(makeDefault());
   const [selected, setSelected]             = useState<SelectedCell | null>(null);
+  const [rangeEnd, setRangeEnd]             = useState<SelectedCell | null>(null);
   const [editing, setEditing]               = useState(false);
   const [editValue, setEditValue]           = useState("");
   const [formulaBarValue, setFormulaBarValue] = useState("");
@@ -127,6 +187,60 @@ export default function Sheets() {
     }, 1200);
   }, [selectedId, updateSheet]);
 
+  // ── Display value (evaluates formulas for rendering) ─────────────────────
+  const getDisplayValue = useCallback((row: number, col: number): string => {
+    const raw = String(localData.rows[row]?.[col] ?? "");
+    if (raw.startsWith("=")) return String(evaluateFormula(raw, localData));
+    return raw;
+  }, [localData]);
+
+  // ── Range helpers ─────────────────────────────────────────────────────────
+  const isInRange = useCallback((row: number, col: number): boolean => {
+    if (!selected || !rangeEnd) return false;
+    const r1 = Math.min(selected.row, rangeEnd.row), r2 = Math.max(selected.row, rangeEnd.row);
+    const c1 = Math.min(selected.col, rangeEnd.col), c2 = Math.max(selected.col, rangeEnd.col);
+    return row >= r1 && row <= r2 && col >= c1 && col <= c2;
+  }, [selected, rangeEnd]);
+
+  // ── Selection stats for status bar ───────────────────────────────────────
+  const selectionStats = useMemo(() => {
+    if (!selected) return null;
+    const end = rangeEnd ?? selected;
+    const r1 = Math.min(selected.row, end.row), r2 = Math.max(selected.row, end.row);
+    const c1 = Math.min(selected.col, end.col), c2 = Math.max(selected.col, end.col);
+    const nums: number[] = [];
+    let nonEmpty = 0;
+    for (let r = r1; r <= r2; r++) {
+      for (let c = c1; c <= c2; c++) {
+        const raw = String(localData.rows[r]?.[c] ?? "");
+        if (raw === "") continue;
+        nonEmpty++;
+        const displayed = raw.startsWith("=") ? evaluateFormula(raw, localData) : raw;
+        const n = parseFloat(String(displayed));
+        if (!isNaN(n)) nums.push(n);
+      }
+    }
+    const cellCount = (r2 - r1 + 1) * (c2 - c1 + 1);
+    const sum = nums.reduce((a, b) => a + b, 0);
+    return {
+      cellCount,
+      nonEmpty,
+      numCount: nums.length,
+      sum: roundNum(sum),
+      avg: nums.length ? roundNum(sum / nums.length) : 0,
+      hasRange: cellCount > 1,
+    };
+  }, [selected, rangeEnd, localData]);
+
+  const rangeLabel = useMemo(() => {
+    if (!selected) return "";
+    const singleLabel = `${localData.cols[selected.col]}${selected.row + 1}`;
+    if (!rangeEnd || (rangeEnd.row === selected.row && rangeEnd.col === selected.col)) return singleLabel;
+    const c1 = Math.min(selected.col, rangeEnd.col), c2 = Math.max(selected.col, rangeEnd.col);
+    const r1 = Math.min(selected.row, rangeEnd.row), r2 = Math.max(selected.row, rangeEnd.row);
+    return `${localData.cols[c1]}${r1 + 1}:${localData.cols[c2]}${r2 + 1}`;
+  }, [selected, rangeEnd, localData.cols]);
+
   const handleCreate = () => createSheet.mutate({ name: "Sheet 1", data: makeDefault() });
 
   const handleDelete = async (sheetId: number) => {
@@ -190,7 +304,7 @@ export default function Sheets() {
   };
 
   const startEditing = (row: number, col: number) => {
-    setSelected({ row, col }); setEditing(true);
+    setSelected({ row, col }); setRangeEnd(null); setEditing(true);
     const val = getCellValue(row, col);
     setEditValue(val); setFormulaBarValue(val);
     setTimeout(() => editInputRef.current?.focus(), 10);
@@ -224,8 +338,22 @@ export default function Sheets() {
     const move = (dr: number, dc: number) => {
       const nr = Math.max(0, Math.min(row + dr, localData.rows.length - 1));
       const nc = Math.max(0, Math.min(col + dc, localData.cols.length - 1));
-      setSelected({ row: nr, col: nc }); setFormulaBarValue(getCellValue(nr, nc));
+      setSelected({ row: nr, col: nc }); setRangeEnd(null); setFormulaBarValue(getCellValue(nr, nc));
     };
+    const extendRange = (dr: number, dc: number) => {
+      const end = rangeEnd ?? selected!;
+      const nr = Math.max(0, Math.min(end.row + dr, localData.rows.length - 1));
+      const nc = Math.max(0, Math.min(end.col + dc, localData.cols.length - 1));
+      setRangeEnd({ row: nr, col: nc });
+    };
+    if (e.shiftKey && ["ArrowDown","ArrowUp","ArrowLeft","ArrowRight"].includes(e.key)) {
+      e.preventDefault();
+      if (e.key === "ArrowDown")  extendRange(1, 0);
+      if (e.key === "ArrowUp")    extendRange(-1, 0);
+      if (e.key === "ArrowLeft")  extendRange(0, -1);
+      if (e.key === "ArrowRight") extendRange(0, 1);
+      return;
+    }
     if (e.key === "ArrowDown")  { e.preventDefault(); move(1, 0); }
     if (e.key === "ArrowUp")    { e.preventDefault(); move(-1, 0); }
     if (e.key === "ArrowLeft")  { e.preventDefault(); move(0, -1); }
@@ -234,7 +362,7 @@ export default function Sheets() {
     if (e.key === "Enter") { e.preventDefault(); if (e.shiftKey) move(-1, 0); else startEditing(row, col); }
     if (e.key === "Delete" || e.key === "Backspace") { setCellValue(row, col, ""); setFormulaBarValue(""); }
     if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
-      setEditValue(e.key); setFormulaBarValue(e.key); setEditing(true);
+      setRangeEnd(null); setEditValue(e.key); setFormulaBarValue(e.key); setEditing(true);
       setTimeout(() => editInputRef.current?.focus(), 10);
     }
   };
@@ -336,8 +464,8 @@ export default function Sheets() {
 
             {/* Formula bar */}
             <div className="flex items-center gap-0 border-b border-border bg-background">
-              <div className="w-20 px-3 py-1.5 text-xs font-mono text-muted-foreground border-r border-border bg-muted/30 flex-shrink-0 text-center">
-                {selectedLabel || "—"}
+              <div className="w-24 px-3 py-1.5 text-xs font-mono text-muted-foreground border-r border-border bg-muted/30 flex-shrink-0 text-center">
+                {rangeLabel || "—"}
               </div>
               <div className="flex items-center flex-1 px-3">
                 <span className="text-xs text-muted-foreground mr-2 font-mono">fx</span>
@@ -379,14 +507,29 @@ export default function Sheets() {
                         const isSelected = selected?.row === ri && selected?.col === ci;
                         const isEditing  = isSelected && editing;
                         const fmt = getCellFormat(ri, ci);
+                        const inRange = !isSelected && isInRange(ri, ci);
+                        const inColHighlight = selected?.col === ci && !isSelected && !inRange;
+                        const inRowHighlight = selected?.row === ri && !isSelected && !inRange;
+                        const displayVal = getDisplayValue(ri, ci);
+                        const isFormula = String(cell ?? "").startsWith("=");
+                        const isError = isFormula && (displayVal === "#ERROR!" || displayVal === "#DIV/0!" || displayVal === "#REF!");
                         return (
                           <td
                             key={ci}
                             tabIndex={0}
                             className={`relative h-7 border-r border-b border-border/50 text-[12px] outline-none transition-colors cursor-default ${
-                              isSelected ? "ring-2 ring-inset ring-primary z-10 bg-background" : "hover:bg-muted/30 focus:ring-2 focus:ring-inset focus:ring-primary/60"
-                            } ${selected?.col === ci && !isSelected ? "bg-primary/5" : ""} ${selected?.row === ri && !isSelected ? "bg-primary/5" : ""}`}
-                            onClick={() => { setSelected({ row: ri, col: ci }); setFormulaBarValue(getCellValue(ri, ci)); setEditing(false); }}
+                              isSelected ? "ring-2 ring-inset ring-primary z-10 bg-background" :
+                              inRange    ? "bg-primary/10" :
+                              "hover:bg-muted/30 focus:ring-2 focus:ring-inset focus:ring-primary/60"
+                            } ${(inColHighlight || inRowHighlight) ? "bg-primary/5" : ""}`}
+                            onClick={(e) => {
+                              if (e.shiftKey && selected) {
+                                setRangeEnd({ row: ri, col: ci });
+                              } else {
+                                setSelected({ row: ri, col: ci }); setRangeEnd(null);
+                                setFormulaBarValue(getCellValue(ri, ci)); setEditing(false);
+                              }
+                            }}
                             onDoubleClick={() => startEditing(ri, ci)}
                             onKeyDown={(e) => handleCellKeyDown(e, ri, ci)}
                           >
@@ -397,9 +540,9 @@ export default function Sheets() {
                                 onChange={(e) => { setEditValue(e.target.value); setFormulaBarValue(e.target.value); }}
                                 onBlur={commitEdit}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter")  { e.preventDefault(); commitEdit(); const n = { row: Math.min(ri + 1, localData.rows.length - 1), col: ci }; setSelected(n); setFormulaBarValue(getCellValue(n.row, n.col)); }
+                                  if (e.key === "Enter")  { e.preventDefault(); commitEdit(); const n = { row: Math.min(ri + 1, localData.rows.length - 1), col: ci }; setSelected(n); setRangeEnd(null); setFormulaBarValue(getCellValue(n.row, n.col)); }
                                   if (e.key === "Escape") { setEditing(false); setEditValue(getCellValue(ri, ci)); setFormulaBarValue(getCellValue(ri, ci)); }
-                                  if (e.key === "Tab")    { e.preventDefault(); commitEdit(); const n = { row: ri, col: Math.min(ci + 1, localData.cols.length - 1) }; setSelected(n); setFormulaBarValue(getCellValue(n.row, n.col)); }
+                                  if (e.key === "Tab")    { e.preventDefault(); commitEdit(); const n = { row: ri, col: Math.min(ci + 1, localData.cols.length - 1) }; setSelected(n); setRangeEnd(null); setFormulaBarValue(getCellValue(n.row, n.col)); }
                                 }}
                                 className="absolute inset-0 w-full h-full bg-background px-2 outline-none text-[12px] text-foreground font-mono border-0"
                                 style={{ fontWeight: fmt.bold ? "bold" : "normal", fontStyle: fmt.italic ? "italic" : "normal", textAlign: fmt.align ?? "left" }}
@@ -409,7 +552,9 @@ export default function Sheets() {
                                 className="h-full px-2 flex items-center overflow-hidden"
                                 style={{ fontWeight: fmt.bold ? "bold" : "normal", fontStyle: fmt.italic ? "italic" : "normal", justifyContent: fmt.align === "center" ? "center" : fmt.align === "right" ? "flex-end" : "flex-start" }}
                               >
-                                <span className="truncate text-foreground font-mono">{String(cell ?? "")}</span>
+                                <span className={`truncate font-mono ${isError ? "text-destructive text-[10px]" : isFormula ? "text-foreground" : "text-foreground"}`}>
+                                  {displayVal}
+                                </span>
                               </div>
                             )}
                           </td>
@@ -422,15 +567,33 @@ export default function Sheets() {
             </div>
 
             {/* Status bar */}
-            <div className="flex items-center gap-4 px-4 py-1.5 border-t border-border/60 bg-muted/20 text-[10px] text-muted-foreground/70">
-              <span>{localData.rows.length} rows × {localData.cols.length} cols</span>
-              {selected && <span>Selected: {selectedLabel}</span>}
-              <span className="ml-auto flex gap-3">
+            <div className="flex items-center gap-3 px-4 py-1.5 border-t border-border/60 bg-muted/20 text-[10px] text-muted-foreground/70 select-none">
+              <span>{localData.rows.length} × {localData.cols.length}</span>
+              {selectionStats && selectionStats.hasRange && (
+                <>
+                  <span className="text-border/60">│</span>
+                  <span>Count: <strong className="text-foreground font-semibold">{selectionStats.nonEmpty}</strong></span>
+                  {selectionStats.numCount > 0 && (
+                    <>
+                      <span className="text-border/60">│</span>
+                      <span>Sum: <strong className="text-foreground font-semibold">{selectionStats.sum.toLocaleString()}</strong></span>
+                      <span className="text-border/60">│</span>
+                      <span>Avg: <strong className="text-foreground font-semibold">{selectionStats.avg.toLocaleString()}</strong></span>
+                    </>
+                  )}
+                </>
+              )}
+              {selectionStats && !selectionStats.hasRange && selectionStats.numCount > 0 && (
+                <>
+                  <span className="text-border/60">│</span>
+                  <span className="text-muted-foreground/50">{selectionStats.sum}</span>
+                </>
+              )}
+              <span className="ml-auto flex gap-3 text-muted-foreground/40">
                 <span><kbd className="font-mono">Enter</kbd> edit</span>
-                <span><kbd className="font-mono">Tab</kbd> next col</span>
-                <span><kbd className="font-mono">↑↓←→</kbd> navigate</span>
-                <span><kbd className="font-mono">⌘B</kbd> bold</span>
-                <span><kbd className="font-mono">Del</kbd> clear</span>
+                <span><kbd className="font-mono">Shift+↑↓←→</kbd> range</span>
+                <span><kbd className="font-mono">Shift+Click</kbd> select</span>
+                <span><kbd className="font-mono">= SUM(A1:B5)</kbd> formula</span>
               </span>
             </div>
           </>

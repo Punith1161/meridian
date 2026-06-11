@@ -262,7 +262,7 @@ export default function Kanban() {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                style={provided.draggableProps.style}
+                                style={provided.draggableProps.style as React.CSSProperties}
                               >
                                 <TaskCard task={task} isDragging={snapshot.isDragging} />
                               </div>

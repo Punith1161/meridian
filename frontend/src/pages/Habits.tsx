@@ -461,7 +461,7 @@ function HabitFormModal({
                   className={`w-7 h-7 rounded-full transition-all ${
                     draft.color === c ? "scale-125 ring-2 ring-offset-2 ring-offset-background" : "hover:scale-110"
                   }`}
-                  style={{ background: c, ringColor: c }}
+                  style={{ background: c, outlineColor: c }}
                   title={c}
                 />
               ))}
