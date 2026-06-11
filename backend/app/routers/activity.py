@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -11,26 +11,27 @@ router = APIRouter(prefix="/activity", tags=["activity"])
 
 @router.get("", response_model=list[ActivityEntry])
 def list_activity(
-    limit: int = Query(default=100, ge=1, le=500),
-    task_id: int | None = Query(default=None, alias="taskId"),
+    limit: int = 100,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(TaskActivity).filter(TaskActivity.user_id == current_user.id)
-    if task_id is not None:
-        query = query.filter(TaskActivity.task_id == task_id)
-
-    entries = query.order_by(TaskActivity.created_at.desc()).limit(limit).all()
+    entries = (
+        db.query(TaskActivity)
+        .filter(TaskActivity.user_id == current_user.id)
+        .order_by(TaskActivity.created_at.desc())
+        .limit(min(limit, 500))
+        .all()
+    )
     return [
         {
-            "id": entry.id,
-            "task_id": entry.task_id,
-            "task_title": entry.task_title,
-            "action": entry.action,
-            "from_value": entry.from_value,
-            "to_value": entry.to_value,
-            "metadata": entry.metadata_text,
-            "created_at": entry.created_at,
+            "id": e.id,
+            "task_id": e.task_id,
+            "task_title": e.task_title,
+            "action": e.action,
+            "from_value": e.from_value,
+            "to_value": e.to_value,
+            "metadata": e.metadata_text,
+            "created_at": e.created_at,
         }
-        for entry in entries
+        for e in entries
     ]

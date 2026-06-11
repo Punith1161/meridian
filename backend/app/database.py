@@ -32,6 +32,18 @@ def run_schema_migrations() -> None:
                 text("ALTER TABLE tasks ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
             )
 
+    if "calendar_events" in table_names:
+        cal_columns = {col["name"] for col in insp.get_columns("calendar_events")}
+        with engine.begin() as conn:
+            if "recurrence" not in cal_columns:
+                conn.execute(
+                    text("ALTER TABLE calendar_events ADD COLUMN recurrence TEXT NOT NULL DEFAULT 'none'")
+                )
+            if "reminder_minutes" not in cal_columns:
+                conn.execute(
+                    text("ALTER TABLE calendar_events ADD COLUMN reminder_minutes INTEGER")
+                )
+
 
 def get_db():
     db = SessionLocal()
@@ -39,3 +51,76 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def run_habit_migrations() -> None:
+    """Create habit tables if they don't exist (additive only)."""
+    insp = inspect(engine)
+    table_names = set(insp.get_table_names())
+
+    if "habits" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE habits (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    color TEXT NOT NULL DEFAULT '#7c3aed',
+                    icon TEXT NOT NULL DEFAULT '⭐',
+                    frequency TEXT NOT NULL DEFAULT 'daily',
+                    frequency_days JSON,
+                    target_count INTEGER NOT NULL DEFAULT 1,
+                    position INTEGER NOT NULL DEFAULT 0,
+                    archived BOOLEAN NOT NULL DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+            """))
+
+    if "habit_entries" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE habit_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    habit_id INTEGER NOT NULL REFERENCES habits(id),
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    date DATE NOT NULL,
+                    count INTEGER NOT NULL DEFAULT 1,
+                    created_at DATETIME,
+                    UNIQUE(habit_id, date)
+                )
+            """))
+
+
+def run_notes_v2_migrations() -> None:
+    """Add notebook table and new note columns if not present."""
+    insp = inspect(engine)
+    table_names = set(insp.get_table_names())
+
+    # Create notebooks table
+    if "notebooks" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE notebooks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    name TEXT NOT NULL,
+                    color TEXT NOT NULL DEFAULT '#7c3aed',
+                    position INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+            """))
+
+    # Add new columns to existing notes table
+    note_cols = {c["name"] for c in insp.get_columns("notes")} if "notes" in table_names else set()
+
+    if "notes" in table_names:
+        with engine.begin() as conn:
+            if "notebook_id" not in note_cols:
+                conn.execute(text("ALTER TABLE notes ADD COLUMN notebook_id INTEGER REFERENCES notebooks(id)"))
+            if "pinned" not in note_cols:
+                conn.execute(text("ALTER TABLE notes ADD COLUMN pinned BOOLEAN NOT NULL DEFAULT 0"))
+            if "tags" not in note_cols:
+                conn.execute(text("ALTER TABLE notes ADD COLUMN tags JSON NOT NULL DEFAULT '[]'"))

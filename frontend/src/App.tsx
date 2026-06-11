@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { Switch, Route, Redirect, useLocation } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,12 +8,26 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
 // Pages
-import Login from "@/pages/Login";
-import Today from "@/pages/Today";
+import Login    from "@/pages/Login";
+import Today    from "@/pages/Today";
+import Kanban   from "@/pages/Kanban";
 import AllTasks from "@/pages/AllTasks";
 import Calendar from "@/pages/Calendar";
-import Habits from "@/pages/Habits";
-import Notes from "@/pages/Notes";
+import Habits   from "@/pages/Habits";
+import Notes    from "@/pages/Notes";
+import Sheets   from "@/pages/Sheets";
+import Activity from "@/pages/Activity";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: unknown) => {
+        if ((error as { status?: number })?.status === 401) return false;
+        return failureCount < 2;
+      },
+    },
+  },
+});
 
 function LoadingScreen() {
   return (
@@ -49,12 +64,14 @@ function AppShell() {
     const handler = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return;
       const map: Record<string, string> = {
-        "1": "/today",
+        "1": "/",
         "2": "/today",
         "3": "/tasks",
         "4": "/notes",
-        "5": "/calendar",
-        "6": "/habits",
+        "5": "/sheets",
+        "6": "/calendar",
+        "7": "/habits",
+        "8": "/activity",
       };
       if (map[e.key]) {
         e.preventDefault();
@@ -70,12 +87,14 @@ function AppShell() {
       <Sidebar />
       <main className="flex-1 ml-14 flex flex-col overflow-hidden">
         <Switch>
-          <Route path="/"          component={Today} />
+          <Route path="/"          component={Kanban} />
           <Route path="/today"     component={Today} />
           <Route path="/tasks"     component={AllTasks} />
           <Route path="/notes"     component={Notes} />
+          <Route path="/sheets"    component={Sheets} />
           <Route path="/calendar"  component={Calendar} />
           <Route path="/habits"    component={Habits} />
+          <Route path="/activity"  component={Activity} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -97,12 +116,14 @@ function AuthGate() {
 export default function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <TooltipProvider delayDuration={300}>
-        <AuthProvider>
-          <AuthGate />
-          <Toaster position="bottom-right" richColors closeButton />
-        </AuthProvider>
-      </TooltipProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delayDuration={300}>
+          <AuthProvider>
+            <AuthGate />
+            <Toaster position="bottom-right" richColors closeButton />
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

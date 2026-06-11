@@ -1,7 +1,8 @@
+"""
+Immutable audit log helper for task actions.
+"""
 import json
-
 from sqlalchemy.orm import Session
-
 from app.models import Task, TaskActivity, User
 
 
@@ -15,22 +16,20 @@ def log_task_activity(
     to_value: str | None = None,
     metadata: dict | str | None = None,
 ) -> None:
-    payload: str | None
-    if metadata is None:
-        payload = None
+    meta_text: str | None = None
+    if isinstance(metadata, dict):
+        meta_text = json.dumps(metadata)
     elif isinstance(metadata, str):
-        payload = metadata
-    else:
-        payload = json.dumps(metadata)
+        meta_text = metadata
 
-    db.add(
-        TaskActivity(
-            task_id=task.id,
-            user_id=user.id,
-            task_title=task.title,
-            action=action,
-            from_value=from_value,
-            to_value=to_value,
-            metadata_text=payload,
-        )
+    entry = TaskActivity(
+        task_id=task.id,
+        user_id=user.id,
+        task_title=task.title,
+        action=action,
+        from_value=from_value,
+        to_value=to_value,
+        metadata_text=meta_text,
     )
+    db.add(entry)
+    # Caller is responsible for db.commit()

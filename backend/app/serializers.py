@@ -14,33 +14,16 @@ def serialize_task(task: Task) -> dict:
     if running and task.timer_started_at is not None:
         spent += _elapsed_seconds_since(task.timer_started_at)
 
-    subtasks = [
-        {
-            "id": st.id,
-            "title": st.title,
-            "status": st.status,
-            "position": st.position,
-            "created_at": st.created_at,
-            "updated_at": st.updated_at,
-        }
-        for st in task.subtasks
-    ]
-
     return {
         "id": task.id,
         "title": task.title,
-        "description": task.description,
         "priority": task.priority,
         "status": task.status,
         "due_date": task.due_date,
         "time_estimate": task.time_estimate,
         "time_spent": spent,
         "timer_running": running,
-        "completed_at": task.completed_at,
         "position": task.position,
-        "tags": task.tags or [],
-        "recurrence": task.recurrence,
-        "subtasks": subtasks,
         "created_at": task.created_at,
         "updated_at": task.updated_at,
     }
@@ -56,6 +39,8 @@ def serialize_calendar_event(event: CalendarEvent) -> dict:
         "location": event.location,
         "description": event.description,
         "color": event.color,
+        "recurrence": event.recurrence if event.recurrence else "none",
+        "reminder_minutes": event.reminder_minutes,
         "created_at": event.created_at,
         "updated_at": event.updated_at,
     }

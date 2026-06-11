@@ -41,6 +41,8 @@ def create_calendar_event(
         location=payload.location,
         description=payload.description,
         color=payload.color,
+        recurrence=payload.recurrence,
+        reminder_minutes=payload.reminder_minutes,
     )
     db.add(event)
     db.commit()
