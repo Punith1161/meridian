@@ -29,45 +29,19 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SubtaskCreate(BaseModel):
-    title: str = Field(min_length=1)
-
-
-class SubtaskUpdate(BaseModel):
-    title: str | None = None
-    status: str | None = None
-
-
-class SubtaskResponse(BaseModel):
-    id: int
-    title: str
-    status: str
-    position: int
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1)
-    description: str | None = None
     priority: TaskPriority = TaskPriority.medium
     status: TaskStatus = TaskStatus.todo
     due_date: date | None = None
     time_estimate: int | None = None
-    tags: list[str] | None = None
-    recurrence: str | None = None
 
 
 class TaskUpdate(BaseModel):
     title: str | None = None
-    description: str | None = None
     priority: TaskPriority | None = None
     due_date: date | None = None
     time_estimate: int | None = None
-    tags: list[str] | None = None
-    recurrence: str | None = None
 
 
 class TaskStatusUpdate(BaseModel):
@@ -87,18 +61,13 @@ class TaskReorderInput(BaseModel):
 class TaskResponse(BaseModel):
     id: int
     title: str
-    description: str | None = None
     priority: TaskPriority
     status: TaskStatus
     due_date: date | None
     time_estimate: int | None
     time_spent: int
     timer_running: bool = False
-    completed_at: datetime | None = None
     position: int = 0
-    tags: list[str] = []
-    recurrence: str | None = None
-    subtasks: list[SubtaskResponse] = []
     created_at: datetime
     updated_at: datetime
 
@@ -153,6 +122,8 @@ class CalendarEventCreate(BaseModel):
     location: str | None = None
     description: str | None = None
     color: str | None = None
+    recurrence: str = "none"
+    reminder_minutes: int | None = None
 
 
 class CalendarEventUpdate(BaseModel):
@@ -163,6 +134,8 @@ class CalendarEventUpdate(BaseModel):
     location: str | None = None
     description: str | None = None
     color: str | None = None
+    recurrence: str | None = None
+    reminder_minutes: int | None = None
 
 
 class CalendarEventResponse(BaseModel):
@@ -174,6 +147,8 @@ class CalendarEventResponse(BaseModel):
     location: str | None
     description: str | None
     color: str | None
+    recurrence: str
+    reminder_minutes: int | None
     created_at: datetime
     updated_at: datetime
 
@@ -216,3 +191,132 @@ class TaskStats(BaseModel):
     by_status: dict[str, int]
     by_priority: dict[str, int]
     total: int
+
+
+# ── Habit schemas ─────────────────────────────────────────────────────────────
+
+class HabitCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = None
+    color: str = "#7c3aed"
+    icon: str = "⭐"
+    frequency: str = "daily"
+    frequency_days: list[int] | None = None
+    target_count: int = 1
+    position: int = 0
+
+
+class HabitUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    color: str | None = None
+    icon: str | None = None
+    frequency: str | None = None
+    frequency_days: list[int] | None = None
+    target_count: int | None = None
+    position: int | None = None
+    archived: bool | None = None
+
+
+class HabitResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    color: str
+    icon: str
+    frequency: str
+    frequency_days: list[int] | None
+    target_count: int
+    position: int
+    archived: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HabitEntryToggle(BaseModel):
+    date: date
+    count: int = 1
+
+
+class HabitEntryResponse(BaseModel):
+    id: int
+    habit_id: int
+    date: date
+    count: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HabitStats(BaseModel):
+    habit_id: int
+    current_streak: int
+    longest_streak: int
+    completion_rate_30d: float   # 0.0–1.0
+    total_completions: int
+    entries_last_365: dict[str, int]   # "YYYY-MM-DD" -> count
+
+
+class HabitWithStats(BaseModel):
+    habit: HabitResponse
+    stats: HabitStats
+    today_entry: HabitEntryResponse | None
+
+
+# ── Notebook schemas ──────────────────────────────────────────────────────────
+
+class NotebookCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    color: str = "#7c3aed"
+    position: int = 0
+
+
+class NotebookUpdate(BaseModel):
+    name: str | None = None
+    color: str | None = None
+    position: int | None = None
+
+
+class NotebookResponse(BaseModel):
+    id: int
+    name: str
+    color: str
+    position: int
+    note_count: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ── Extended Note schemas ─────────────────────────────────────────────────────
+
+class NoteCreateV2(BaseModel):
+    title: str = "Untitled"
+    content: str | None = None          # Tiptap JSON string
+    notebook_id: int | None = None
+    pinned: bool = False
+    tags: list[str] = []
+
+
+class NoteUpdateV2(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    notebook_id: int | None = None
+    pinned: bool | None = None
+    tags: list[str] | None = None
+
+
+class NoteResponseV2(BaseModel):
+    id: int
+    title: str
+    content: str | None
+    notebook_id: int | None
+    pinned: bool
+    tags: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

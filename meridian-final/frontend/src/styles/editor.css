@@ -1,0 +1,312 @@
+/* ── Tiptap / ProseMirror editor — MERIDIAN theme ───────────────────────────── */
+
+.tiptap-editor .ProseMirror {
+  outline: none;
+  min-height: 100%;
+  padding: 1.5rem 2rem 4rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: hsl(var(--foreground));
+  caret-color: hsl(var(--primary));
+}
+
+/* ── Placeholder ──────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.5rem 0 0.6rem;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid hsl(var(--border));
+  padding-bottom: 0.35rem;
+}
+.tiptap-editor .ProseMirror h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.5rem;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.01em;
+}
+.tiptap-editor .ProseMirror h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1rem 0 0.4rem;
+  color: hsl(var(--foreground));
+}
+
+/* ── Paragraphs ───────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror p {
+  margin: 0 0 0.65rem;
+}
+.tiptap-editor .ProseMirror > *:first-child { margin-top: 0; }
+.tiptap-editor .ProseMirror > *:last-child  { margin-bottom: 0; }
+
+/* ── Inline marks ─────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror strong { font-weight: 700; }
+.tiptap-editor .ProseMirror em     { font-style: italic; }
+.tiptap-editor .ProseMirror u      { text-decoration: underline; text-underline-offset: 2px; }
+.tiptap-editor .ProseMirror s      { text-decoration: line-through; opacity: 0.7; }
+
+.tiptap-editor .ProseMirror mark {
+  background: hsl(var(--primary) / 0.18);
+  color: hsl(var(--foreground));
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.tiptap-editor .ProseMirror a:hover { opacity: 0.8; }
+
+/* ── Inline code ──────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+}
+
+/* ── Code block ───────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror pre {
+  background: hsl(var(--muted) / 0.7);
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+.tiptap-editor .ProseMirror pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+}
+
+/* ── Blockquote ───────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid hsl(var(--primary) / 0.5);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+/* ── Horizontal rule ──────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 1.25rem 0;
+}
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.tiptap-editor .ProseMirror li { margin: 0.2rem 0; }
+.tiptap-editor .ProseMirror ul li { list-style-type: disc; }
+.tiptap-editor .ProseMirror ul li li { list-style-type: circle; }
+.tiptap-editor .ProseMirror ol li { list-style-type: decimal; }
+.tiptap-editor .ProseMirror li > p { margin: 0; }
+
+/* ── Task list (checkboxes) ───────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror ul[data-type="taskList"] {
+  padding-left: 0;
+  margin: 0.5rem 0;
+  list-style: none;
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0.3rem 0;
+  list-style: none;
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label {
+  display: flex;
+  align-items: center;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid hsl(var(--border));
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 1px;
+  width: 5px; height: 8px;
+  border: 2px solid white;
+  border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+  table-layout: fixed;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+}
+.tiptap-editor .ProseMirror th,
+.tiptap-editor .ProseMirror td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  vertical-align: top;
+  position: relative;
+}
+.tiptap-editor .ProseMirror th {
+  background: hsl(var(--muted) / 0.6);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: hsl(var(--muted-foreground));
+}
+.tiptap-editor .ProseMirror .selectedCell {
+  background: hsl(var(--primary) / 0.08);
+}
+.tiptap-editor .ProseMirror .tableWrapper {
+  overflow-x: auto;
+}
+
+/* ── Image ────────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  border: 1px solid hsl(var(--border));
+}
+.tiptap-editor .ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid hsl(var(--primary));
+}
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror ::selection {
+  background: hsl(var(--primary) / 0.2);
+}
+.tiptap-editor .ProseMirror .ProseMirror-focused { outline: none; }
+
+/* ── Slash command menu ───────────────────────────────────────────────────── */
+.slash-menu {
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  padding: 4px;
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 0.8rem;
+  color: hsl(var(--foreground));
+}
+.slash-menu-item:hover,
+.slash-menu-item.active {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.slash-menu-item-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+}
+.slash-menu-item .label { font-weight: 500; }
+.slash-menu-item .sub   { font-size: 0.7rem; color: hsl(var(--muted-foreground)); }
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.editor-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.12s;
+  font-size: 13px;
+}
+.editor-toolbar-btn:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.editor-toolbar-btn.active {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+.editor-toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: hsl(var(--border));
+  flex-shrink: 0;
+}

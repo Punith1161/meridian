@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.database import Base, engine, run_schema_migrations
-from app.routers import activity, auth, calendar, notes, sheets, summary, tasks, timer
+from app.api import activity, auth, calendar, notes, sheets, summary, tasks, timer
 
 load_dotenv()
 

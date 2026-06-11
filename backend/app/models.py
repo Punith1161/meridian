@@ -13,6 +13,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     tasks = relationship("Task", back_populates="owner")
+    subtasks = relationship("Subtask", foreign_keys="Subtask.user_id")
     notes = relationship("Note", back_populates="owner")
     sheets = relationship("Sheet", back_populates="owner")
     activity = relationship("TaskActivity", back_populates="owner")
@@ -25,17 +26,38 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
     priority = Column(String, default="medium")
     status = Column(String, default="todo")
     due_date = Column(Date, nullable=True)
-    time_estimate = Column(Integer, nullable=True)
-    time_spent = Column(Integer, default=0)
+    time_estimate = Column(Integer, nullable=True)  # in minutes
+    time_spent = Column(Integer, default=0)  # in seconds
     timer_started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)  # when task marked as done
     position = Column(Integer, default=0, nullable=False)
+    tags = Column(JSON, default=list)  # list of tags
+    recurrence = Column(String, nullable=True)  # 'daily', 'weekly', 'monthly', etc
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="tasks")
+    subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
+
+
+class Subtask(Base):
+    __tablename__ = "subtasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    status = Column(String, default="todo")  # 'todo', 'done'
+    position = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    task = relationship("Task", back_populates="subtasks")
+    owner = relationship("User", foreign_keys=[user_id])
 
 
 class Note(Base):
